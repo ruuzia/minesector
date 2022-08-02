@@ -1,0 +1,4 @@
+.ccls*
+.clangd*
+*.o
+main
