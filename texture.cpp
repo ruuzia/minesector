@@ -18,14 +18,14 @@ Texture::~Texture() {
     free();
 }
 
-void Texture::render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip) const {
+void Texture::render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) const {
     const SDL_Rect dstrect = {
         .x = x,
         .y = y,
         .w = width,
         .h = height,
     };
-    SDL_RenderCopy(renderer, texture, clip, &dstrect);
+    SDL_RenderCopyEx(renderer, texture, clip, &dstrect, angle, center, flip);
 }
 
 void Texture::free() {

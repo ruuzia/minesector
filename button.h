@@ -15,7 +15,7 @@ public:
 
     virtual void onClick(SDL_Event *e) {}
 
-    void render(SDL_Renderer *renderer) const {
+    virtual void render(SDL_Renderer *renderer) const {
         texture->render(renderer, x, y);
     }
 

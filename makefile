@@ -1,12 +1,10 @@
 CC=g++
 
-OBJS = main.cpp texture.cpp game.cpp button.cpp
-
 OBJS_O = main.o texture.o game.o button.o
 
 OBJ_NAME = main
 
-CXXFLAGS = -Wall -Werror -pedantic -std=c++2a
+CXXFLAGS = -Wall -pedantic -std=c++2a
 LDFLAGS =
 LDLIBS = -lSDL2 -lSDL2_image -lSDL2_ttf
 
@@ -15,12 +13,15 @@ all: $(OBJ_NAME)
 debug: CXXFLAGS += -DDebug -g
 debug: $(OBJ_NAME)
 
-main.o: main.cpp common.h texture.h button.h game.h
-texture.o: texture.cpp texture.h common.h
-game.o: game.cpp game.h
-button.o: button.cpp button.h
+COMMON_H = common.h
+TEXTURE_H = texture.h $(COMMON_H)
+BUTTON_H = button.h $(TEXTURE_H)
+GAME_H = game.h $(BUTTON_H)
 
-%.o: SRC += %.cpp
+main.o: main.cpp $(GAME_H)
+texture.o: texture.cpp $(TEXTURE_H)
+game.o: game.cpp $(GAME_H)
+button.o: button.cpp $(BUTTON_H)
 
 $(OBJ_NAME): $(OBJS_O)
 
