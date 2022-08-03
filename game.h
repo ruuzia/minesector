@@ -2,10 +2,13 @@
 #define GAME_H
 
 #include "button.h"
+#include "anim.h"
 
 #include <vector>
 #include <functional>
 #include <random>
+#include <memory>
+#include <deque>
 
 
 #define NUMBER_TILES_COUNT 8
@@ -20,12 +23,12 @@ public:
 
     Texture *overlay;
 
-    void render(SDL_Renderer *renderer);
+    void render();
 
     Tile(Texture *tex = nullptr);
 
     bool isMine() const { return mine; }
-    bool isEmpty() const { return !mine; }
+    bool isSafe() const { return !mine; }
 
     bool isHidden() const { return hidden; }
     bool isRevealed() const { return !hidden; }
@@ -37,6 +40,16 @@ public:
     void setFlagged(bool f) { flagged = f; }
     void setHidden(bool f) { hidden = f; }
 
+    //void flag();
+    //void unflag();
+    //void flip();
+    //void reset();
+
+    void OnUpdate(double dt) {
+        render();
+        animState.update(dt);
+    }
+
     int number;
 
     bool isRed;
@@ -47,14 +60,17 @@ public:
     void foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals = true);
     int countTouchingMines();
 
-    void reveal();
+    void reveal(bool update = true);
 
     int row;
     int col;
+    AnimState animState;
+
 private:
     bool mine;
     bool hidden;
     bool flagged;
+
 
     Game *game;
 };
@@ -95,7 +111,7 @@ public:
     bool loadMedia(SDL_Window *window);
     bool initialRender();
 
-    void OnUpdate(int dt);
+    void OnUpdate(double dt);
     void OnStart();
 
     void onMouseButtonDown(SDL_MouseButtonEvent &e);
@@ -109,23 +125,28 @@ public:
 
     struct {
         Texture title;
+        Texture playAgain;
         Texture tiles[COUNT_TTEX];
         Texture icons[COUNT_ICONS];
         Texture numbers[COUNT_TILE_NUMBERS];
     } textures;
 
+    std::mt19937 rng;
 
 private:
-
+    TextButton playAgainBtn;
     bool started;
 
+    void restartGame();
+    void onLost(Tile& mine);
     bool hasWon();
     void generateStartingArea(Tile& tile);
     void generateMines();
     void flipTiles(Tile& root, int& count, bool diagonals = true);
     void onRevealTile(Tile& tile);
 
-    SDL_Renderer *renderer;
+    std::deque<Tile*> toreveal;
+
     SDL_Window *window;
 
 
@@ -135,7 +156,6 @@ private:
 
     Tile *currentHover;
 
-    std::mt19937 rng;
 };
 
 #endif

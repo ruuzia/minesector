@@ -21,14 +21,14 @@ Tile::Tile(Texture *tex) : Button(tex) {
 
 void Tile::onClick() { }
 
-void Tile::reveal() {
+void Tile::reveal(bool update) {
     setHidden(false);
-    updateTexture();
-    if (isEmpty() && countTouchingMines() == 0) {
+    if (update) updateTexture();
+    if (isSafe() && countTouchingMines() == 0) {
         // Recursively reveal surrounding tiles
-        foreach_touching_tile([](Tile& tile) {
+        foreach_touching_tile([update](Tile& tile) {
             if (tile.isHidden()) {
-                tile.reveal();
+                tile.reveal(update);
             }
         });
     }
@@ -48,29 +48,53 @@ int Tile::countTouchingMines() {
 
 
 void Tile::updateTexture(bool mouseOver) {
+    Texture *flagTex = &game->textures.icons[ICON_FLAG];
     if (isHidden() && isFlagged()) {
-        texture = &game->textures.tiles[TTEX_HIDDEN];
-        overlay = &game->textures.icons[ICON_FLAG];
+        background = &game->textures.tiles[TTEX_HIDDEN];
+
+        if (overlay != flagTex && !animState.active) {
+            // Disable overlay while animation in progress
+            overlay = nullptr;
+
+            animState.start(new FlagAnim(flagTex, {x, y}, flagged),
+                [&overlay=overlay, flagTex, &flagged=flagged] () {
+                    // Animation deleted
+                    if (flagged) overlay = flagTex;
+                }
+            );
+        }
     }
-    
     else if (isHidden() && mouseOver) {
-        texture = &game->textures.tiles[TTEX_HIGHLIGHT];
-        overlay = nullptr;
+        background = &game->textures.tiles[TTEX_HIGHLIGHT];
     }
     
     else if (isHidden()) {
-        texture = &game->textures.tiles[TTEX_HIDDEN];
+        background = &game->textures.tiles[TTEX_HIDDEN];
+        if (!animState.active && overlay == flagTex) {
+            animState.start(new FlagAnim(flagTex, {x, y}, flagged), 
+                [&overlay=overlay, flagTex, &flagged=flagged] () {
+                    // Animation deleted
+                    if (flagged) overlay = flagTex;
+                });
+        }
+
         overlay = nullptr;
     }
     
     else if (isMine()) {
-        texture = &game->textures.tiles[isRed ? TTEX_RED_SQUARE : TTEX_BLANK_SQUARE];
+        background = &game->textures.tiles[TTEX_BLANK_SQUARE];
         overlay = &game->textures.icons[ICON_MINE];
     }
     
     else {
-        texture = &game->textures.tiles[isRed ? TTEX_RED_SQUARE : TTEX_BLANK_SQUARE];
+        if ((background != &game->textures.tiles[TTEX_BLANK_SQUARE]) && !animState.active) {
+            animState.start(new UncoverAnim(background, {x, y}, game->rng), [](){});
+        }
+        background = &game->textures.tiles[TTEX_BLANK_SQUARE];
         overlay = &game->textures.numbers[countTouchingMines()];
+    }
+    if (isRed) {
+        background = &game->textures.tiles[TTEX_RED_SQUARE];
     }
 }
 
@@ -99,28 +123,41 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
     }
 }
 
-void Tile::render(SDL_Renderer *renderer) {
-    if (texture) {
-        texture->render(renderer, x, y);
+void Tile::render() {
+    if (background) {
+        background->render(x, y);
     }
     if (overlay) {
-        overlay->render(renderer, x, y);
+        overlay->render(x, y);
     }
 }
 
 void Game::OnStart() {
 }
 
-void Game::OnUpdate(int dt) {
+void Game::OnUpdate(double dt) {
     int screen_width;
     SDL_GetWindowSize(window, &screen_width, NULL);
 
     /** textures.title **/
     int x_title = screen_width / 2 - textures.title.getWidth() / 2; 
-    textures.title.render(renderer, x_title, TITLE_SPACE_ABOVE);
+    textures.title.render(x_title, TITLE_SPACE_ABOVE);
+
+    if (!toreveal.empty()) {
+        Tile& tile = *toreveal.front();
+        if (!tile.animState.active || tile.animState.runningTime() > 200) {
+            tile.updateTexture();
+            toreveal.pop_front();
+            if (!toreveal.empty()) toreveal.front()->updateTexture();
+        }
+    }
 
     for (auto& row : board) for (Tile& tile : row) {
-        tile.render(renderer);
+        tile.OnUpdate(dt);
+    }
+
+    if (state & GAME_OVER) {
+        playAgainBtn.render();
     }
 }
 
@@ -151,8 +188,25 @@ Game::~Game() {
 
 }
 
+void Game::restartGame() {
+    state = GAME_READY;
+    for (auto& row:board) for (auto& tile : row) {
+        tile.setHidden(true);
+        tile.setMine(false);
+        tile.setFlagged(false);
+        tile.isRed = false;
+        tile.updateTexture();
+    }
+}
+
 void Game::onMouseButtonDown(SDL_MouseButtonEvent &e) {
-    if (currentHover == nullptr || state & GAME_OVER) return;
+    if (state & GAME_OVER) {
+        if (e.button == SDL_BUTTON_LEFT && playAgainBtn.isMouseOver(e.x, e.y)) {
+            restartGame();
+        }
+        return;
+    }
+    if (currentHover == nullptr) return;
 
     if (e.button == SDL_BUTTON_LEFT) {
         if (currentHover->isHidden() && currentHover->isUnflagged()) {
@@ -174,19 +228,30 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent &e) {
     currentHover->updateTexture();
 }
 
+void Game::onLost(Tile& mine) {
+    printf("Game lost!\n");
+    state |= GAME_LOST;
+    mine.reveal();
+    mine.isRed = true;
+
+    for (auto& row: board) for (Tile& tile : row) {
+        if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
+            // Reveal all mines
+            tile.reveal();
+        }
+        else if (tile.isSafe() && tile.isFlagged()) {
+            // Incorrect flag
+            tile.isRed = true;
+            tile.updateTexture();
+        }
+    }
+}
+
 void Game::onRevealTile(Tile& revealed) {
     if (revealed.isMine()) {
-        printf("Game lost!\n");
-        state |= GAME_LOST;
-        revealed.reveal();
-        revealed.isRed = true;
-
-        for (auto& row: board) for (Tile& tile : row) {
-            if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
-                tile.reveal();
-            }
-        }
-    } else if (hasWon()) {
+        onLost(revealed);
+    }
+    else if (hasWon()) {
         printf("Game won!\n");
         state |= GAME_WON;
     }
@@ -194,6 +259,13 @@ void Game::onRevealTile(Tile& revealed) {
 
 void Game::onMouseButtonUp(SDL_MouseButtonEvent &e) {
 
+}
+
+static bool containsTile(std::deque<Tile*> tiles, Tile *target) {
+    for (auto t : tiles) {
+        if (t == target) return true;
+    }
+    return false;
 }
 
 void Game::onMouseMove(SDL_Event *e, int x, int y) {
@@ -205,7 +277,7 @@ void Game::onMouseMove(SDL_Event *e, int x, int y) {
     bool overTile = false;
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
-            if (board[r][c].isMouseOver(x, y)) {
+            if (board[r][c].isMouseOver(x, y) && !containsTile(toreveal, &board[r][c])) {
                 overTile = true;
                 if (currentHover) currentHover->updateTexture(false);
                 currentHover = &board[r][c];
@@ -241,6 +313,7 @@ void Game::flipTiles(Tile& root, int& count, bool diagonals) {
 
         tile->setHidden(false);
         tile->setMine(false);
+        toreveal.push_back(tile);
         recurse.push_back(tile);
     }
     if (count <= 0) return;
@@ -253,6 +326,8 @@ void Game::flipTiles(Tile& root, int& count, bool diagonals) {
 }
 
 void Game::generateStartingArea(Tile& root) {
+    toreveal.push_back(&root);
+
     root.setHidden(false);
     root.setMine(false);
     int count = 20;
@@ -260,13 +335,14 @@ void Game::generateStartingArea(Tile& root) {
     flipTiles(root, count, picknum);
 
     generateMines();
-
-    for (auto& row : board) for (auto& tile : row) {
+    for (auto& row:board) for (Tile& tile : row) {
         if (tile.isRevealed()) {
-            tile.reveal();
+            tile.reveal(false);
         }
-        else {
-            tile.updateTexture();
+    }
+    for (auto& row:board) for (Tile& tile : row) {
+        if (tile.isRevealed() && !containsTile(toreveal, &tile)) {
+            toreveal.push_back(&tile);
         }
     }
 }
@@ -280,23 +356,25 @@ void Game::generateMines() {
         int col = n % cols;
 
         Tile& tile = board[row][col];
-        if (tile.isHidden() && tile.isEmpty()) {
+        if (tile.isHidden() && tile.isSafe()) {
             tile.setMine(true);
             --count;
         }
     }
 }
 
+// @pedantic
+
 const char* TILE_FILES[] = {
-    "images/square_blank.png", /* TTEX_NUMBER_0 */ 
-    "images/tile.png",         /* TTEX_HIDDEN */
-    "images/hovered_tile.png", /* TTEX_HIGHLIGHT */
-    "images/square_red.png",   /* TTEX_RED_SQUARE */
+    [TTEX_BLANK_SQUARE] = "images/square_blank.png",
+    [TTEX_HIDDEN] = "images/tile.png",
+    [TTEX_HIGHLIGHT] = "images/hovered_tile.png",
+    [TTEX_RED_SQUARE] = "images/square_red.png",
 };
 
 const char* ICON_FILES[] = {
-    "images/flag.png", /* TTEX_FLAG */
-    "images/mine.png",    /* TTEX_MINE */
+    [ICON_FLAG] = "images/flag.png",
+    [ICON_MINE] = "images/mine.png",
 };
 
 const char* NUMBER_FILES[] = {
@@ -310,7 +388,6 @@ const char* NUMBER_FILES[] = {
     "images/number_7.png",
     "images/number_8.png",
 };
-
 
 bool Game::loadMedia(SDL_Window *win) {
     // Initialize member variables
@@ -329,7 +406,7 @@ bool Game::loadMedia(SDL_Window *win) {
 
     { /** Title texture **/
         SDL_Color titleColor = { 0, 0, 0 };
-        if (textures.title.loadText(renderer, mainFont, "Minesweeper", titleColor) == FAIL) {
+        if (textures.title.loadText(mainFont, "Minesweeper", titleColor) == FAIL) {
             return FAIL;
         }
     }
@@ -338,25 +415,25 @@ bool Game::loadMedia(SDL_Window *win) {
         int w = TILE_SIZE;
         int h = TILE_SIZE;
         for (int i = 0; i < COUNT_TTEX; ++i) {
-            if (textures.tiles[i].loadFile(renderer, TILE_FILES[i], w, h) == FAIL)
+            if (textures.tiles[i].loadFile(TILE_FILES[i], w, h) == FAIL)
                 return FAIL;
         }
 
         for (int i = 0; i < COUNT_ICONS; ++i) {
-            if (textures.icons[i].loadFile(renderer, ICON_FILES[i], w, h) == FAIL)
+            if (textures.icons[i].loadFile(ICON_FILES[i], w, h) == FAIL)
                 return FAIL;
         }
 
         for (int i = 0; i < COUNT_TILE_NUMBERS; ++i) {
             if (NUMBER_FILES[i]) {
-                if (textures.numbers[i].loadFile(renderer, NUMBER_FILES[i], w, h) == FAIL)
+                if (textures.numbers[i].loadFile(NUMBER_FILES[i], w, h) == FAIL)
                     return FAIL;
             }
         }
     }
 
+    int top = TITLE_SPACE_ABOVE + textures.title.getHeight() + TITLE_SPACE_BELOW;
     { /** Tile buttons **/
-        int top = TITLE_SPACE_ABOVE + textures.title.getHeight() + TITLE_SPACE_BELOW;
         int left = (screen_width - cols*TILE_SIZE) / 2;
 
         for (int row = 0; row < rows; ++row) {
@@ -369,12 +446,22 @@ bool Game::loadMedia(SDL_Window *win) {
         }
     }
 
+    { /** Play Again Button **/
+        playAgainBtn.setColor(0x00, 0xC0, 0x00);
+        playAgainBtn.setFont(mainFont);
+        playAgainBtn.setString("Play again?");
+        playAgainBtn.scale = 0.5;
+        playAgainBtn.load();
+        playAgainBtn.setCenterPos(screen_width / 2, rows * TILE_SIZE + top + 50);
+        playAgainBtn.x = (screen_width - playAgainBtn.getWidth()) / 2;
+    }
+
     return OK;
 }
 
 bool Game::hasWon() {
     for (auto& row : board) for (auto& tile : row) {
-        if (tile.isRevealed() && tile.isEmpty()) {
+        if (tile.isRevealed() && tile.isSafe()) {
             return false;
         }
     }

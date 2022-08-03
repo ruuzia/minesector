@@ -12,7 +12,9 @@
 const int SCREEN_WIDTH =  640 * 1.5;
 const int SCREEN_HEIGHT = 480 * 1.5;
 
-static bool init(SDL_Renderer * &renderer, SDL_Window * &window) {
+SDL_Renderer *renderer;
+
+static bool init(SDL_Window * &window) {
     window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (window == NULL) {
         printf("Unable to create window. SDL Error: %s\n", SDL_GetError());
@@ -48,7 +50,7 @@ static bool loadMedia(SDL_Window *window, Game &game) {
     return OK;
 }
 
-[[ noreturn ]] static void close(int exitCode, SDL_Renderer *renderer, SDL_Window *window) {
+[[ noreturn ]] static void close(int exitCode, SDL_Window *window) {
     SDL_DestroyRenderer(renderer);
     renderer = NULL;
 
@@ -61,7 +63,7 @@ static bool loadMedia(SDL_Window *window, Game &game) {
     exit(exitCode);
 }
 
-static bool Update(SDL_Renderer *renderer, Game &game, double dt) {
+static bool Update(Game &game, double dt) {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_RenderClear(renderer);
 
@@ -102,16 +104,15 @@ const int TITLE_FONT_SIZE = 28;
 int main(int argc, char **argv) {
     (void)argc; (void) argv;
 
-    Game game;
-    SDL_Renderer *renderer;
+    Game game(10, 10);
     SDL_Window *window;
 
-    if (init(renderer, window) == FAIL) {
-        close(1, renderer, window);
+    if (init(window) == FAIL) {
+        close(1, window);
     }
 
     if (loadMedia(window, game) == FAIL) {
-        close(1, renderer, window);
+        close(1, window);
     }
 
     bool quit = false;
@@ -119,10 +120,10 @@ int main(int argc, char **argv) {
     game.OnStart();
     while (!quit) {
         Uint32 current = SDL_GetTicks();
-        double dt = (current - lastFrame) / 1000;
+        double dt = (current - lastFrame) / 1000.0;
         lastFrame = current;
-        quit = Update(renderer, game, dt);
+        quit = Update(game, dt);
     }
 
-    close(0, renderer, window);
+    close(0, window);
 }

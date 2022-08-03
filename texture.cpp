@@ -10,6 +10,8 @@ Texture::Texture() {
     texture = nullptr;
     width = 0;
     height = 0;
+    imgHeight = 0;
+    imgWidth = 0;
     //pos.x = 0;
     //pos.y = 0;
 }
@@ -18,7 +20,7 @@ Texture::~Texture() {
     free();
 }
 
-void Texture::render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) const {
+void Texture::render(int x, int y, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) const {
     const SDL_Rect dstrect = {
         .x = x,
         .y = y,
@@ -26,6 +28,24 @@ void Texture::render(SDL_Renderer *renderer, int x, int y, SDL_Rect *clip, doubl
         .h = height,
     };
     SDL_RenderCopyEx(renderer, texture, clip, &dstrect, angle, center, flip);
+}
+
+void Texture::renderPart(int x, int y, const SDL_Rect *rect) const {
+    const SDL_Rect srcrect = {
+        .x = rect->x,
+        .y = rect->y,
+        .w = rect->w * (int) (imgWidth / (float)width), 
+        .h = rect->h * (int) (imgHeight / (float)height),
+    };
+
+    const SDL_Rect dstrect = {
+        .x = x + rect->x,
+        .y = y + rect->y,
+        .w = rect->w,
+        .h = rect->h,
+    };
+
+    SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
 }
 
 void Texture::free() {
@@ -37,7 +57,7 @@ void Texture::free() {
     }
 }
 
-bool Texture::loadFile(SDL_Renderer *renderer, const char* path) {
+bool Texture::loadFile(const char* path) {
     // Free any existing texture
     free();
 
@@ -54,11 +74,13 @@ bool Texture::loadFile(SDL_Renderer *renderer, const char* path) {
         return FAIL;
     }
 
+    imgWidth = width;
+    imgHeight = height;
 
     return OK;
 }
 
-bool Texture::loadText(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color) {
+bool Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
     free();
 
     // Need to create temp surface and convert to texture
@@ -75,6 +97,8 @@ bool Texture::loadText(SDL_Renderer *renderer, TTF_Font *font, const char *text,
     }
     width = tmpSurface->w;
     height = tmpSurface->h;
+    imgWidth = width;
+    imgHeight = height;
 
     SDL_FreeSurface(tmpSurface);
 
