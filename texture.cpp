@@ -1,7 +1,7 @@
 #include "texture.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_ttf.h>
+#include <SDL.h>
+#include <SDL_image.h>
+#include <SDL_ttf.h>
 
 #define OK true
 #define FAIL false
@@ -57,43 +57,37 @@ void Texture::free() {
     }
 }
 
-bool Texture::loadFile(const char* path) {
+void Texture::loadFile(std::string& path) {
     // Free any existing texture
     free();
 
     // Directly load image to texture
-    texture = IMG_LoadTexture(renderer, path);
+    texture = IMG_LoadTexture(renderer, path.c_str());
     if (texture == NULL) {
-        printf("Unable to create texture from image %s. SDL_image error: %s\n", path, IMG_GetError());
-        return FAIL;
+        throw std::runtime_error("Unable to create texture from image " + path + ". SDL_image error: " + std::string(IMG_GetError()));
     }
 
     // Get width and height of texture
     if (SDL_QueryTexture(texture, NULL, NULL, &width, &height) < 0) {
-        printf("Unable to query texture. SDL error: %s\n", SDL_GetError());
-        return FAIL;
+        throw std::runtime_error("Unable to query texture. SDL error: " + std::string(SDL_GetError()));
     }
 
     imgWidth = width;
     imgHeight = height;
-
-    return OK;
 }
 
-bool Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
+void Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
     free();
 
     // Need to create temp surface and convert to texture
     SDL_Surface *tmpSurface = TTF_RenderText_Solid(font, text, color);
     if (tmpSurface == NULL) {
-        printf("Unable to load text. SDL_ttf error: %s\n", TTF_GetError());
-        return FAIL;
+        throw std::runtime_error("Unable to load text. SDL_ttf error: " + std::string(TTF_GetError()));
     }
 
     texture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
     if (texture == NULL) {
-        printf("Unable to create texture from text. SDL error: %s\n", SDL_GetError());
-        return FAIL;
+        throw std::runtime_error("Unable to create texture from text. SDL error: " + std::string(SDL_GetError()));
     }
     width = tmpSurface->w;
     height = tmpSurface->h;
@@ -101,7 +95,5 @@ bool Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
     imgHeight = height;
 
     SDL_FreeSurface(tmpSurface);
-
-    return OK;
 }
 

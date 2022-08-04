@@ -1,11 +1,12 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_ttf.h"
-#include "SDL2/SDL_image.h"
+#include "SDL.h"
+#include "SDL_ttf.h"
+#include "SDL_image.h"
 
 #include "common.h"
+#include <stdexcept>
 
 class Texture
 {
@@ -13,16 +14,15 @@ public:
     Texture();
     ~Texture();
 
-    bool loadFile(const char* file);
+    void loadFile(std::string& path);
 
     // Overload to also set width and height
-    bool loadFile(const char* file, int width, int height) {
-        if (loadFile(file) == FAIL) return FAIL;
+    void loadFile(std::string& file, int width, int height) {
+        loadFile(file);
         setSize(width, height);
-        return OK;
     }
 
-    bool loadText(TTF_Font *font, const char* text, SDL_Color color);
+    void loadText(TTF_Font *font, const char* text, SDL_Color color);
 
     void free();
 
