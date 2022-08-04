@@ -3,31 +3,44 @@
 AnimState::AnimState() {
     active = false;
     anim = nullptr;
+    //anim.reset();
+    onstart = nullptr;
+    onfinish = nullptr;
 }
 
-void AnimState::start(Anim* anim, callback onfinish) {
-    active = true;
-    startTime = SDL_GetTicks();
+void AnimState::start(int code, Anim* anim_, callback onfinish, Uint32 delay) {
+    active = code;
+    started = false;
+    startTime = SDL_GetTicks() + delay;
 
-    this->anim = anim;
+    //anim.reset(anim_);
+    if (anim) delete anim;
+    anim = anim_;
     this->onfinish = onfinish;
-    anim->OnStart();
+}
+
+void AnimState::kill() {
+    if (active) {
+        active = 0;
+        delete anim;
+        anim = nullptr;
+        if (onfinish) onfinish();
+    }
 }
 
 void AnimState::update(double dt) {
     if (anim == nullptr) return;
 
-    if (!anim->OnUpdate(dt)) {
-        active = false;
-
-        // I could use smart pointer but eh
-        delete anim;
-        anim = nullptr;
-
-        if (onfinish == nullptr) {
-        } else {
-            onfinish();
+    if (!started) {
+        if (SDL_GetTicks() >= startTime) {
+            startTime = SDL_GetTicks();
+            started = true;
+            anim->OnStart();
+            if (onstart) { onstart(); }
         }
+    }
+    else if (!anim->OnUpdate(dt)) {
+        kill();
         return;
     }
 
