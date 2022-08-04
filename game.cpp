@@ -2,6 +2,7 @@
 #include "game.h"
 
 #include <algorithm>
+//#include <experimental/algorithm>
 
 const int TITLE_FONT_SIZE = 40;
 const int TITLE_SPACE_ABOVE = 15;
@@ -19,22 +20,7 @@ Tile::Tile(Texture *tex) : Button(tex) {
     isRed = false;
 }
 
-void Tile::onClick() { }
-
-void Tile::reveal(bool update) {
-    setHidden(false);
-    if (update) updateTexture();
-    if (isSafe() && countTouchingMines() == 0) {
-        // Recursively reveal surrounding tiles
-        foreach_touching_tile([update](Tile& tile) {
-            if (tile.isHidden()) {
-                tile.reveal(update);
-            }
-        });
-    }
-}
-
-int Tile::countTouchingMines() {
+int Tile::countTouchingMines() const {
     int nearbyMines = 0;
 
     foreach_touching_tile([&](Tile& tile) -> void {
@@ -46,67 +32,106 @@ int Tile::countTouchingMines() {
     return nearbyMines;
 }
 
+typedef enum {
+    TILE_ANIM_FLAG = 1,
+    TILE_ANIM_UNCOVER,
+} TileAnims;
 
-void Tile::updateTexture(bool mouseOver) {
-    Texture *flagTex = &game->textures.icons[ICON_FLAG];
-    if (isHidden() && isFlagged()) {
-        background = &game->textures.tiles[TTEX_HIDDEN];
 
-        if (overlay != flagTex && !animState.active) {
-            // Disable overlay while animation in progress
-            overlay = nullptr;
+void Tile::playFlagAnim() {
+    if (animState.active == TILE_ANIM_FLAG) return;
 
-            animState.start(new FlagAnim(flagTex, {x, y}, flagged),
-                [&overlay=overlay, flagTex, &flagged=flagged] () {
-                    // Animation deleted
-                    if (flagged) overlay = flagTex;
-                }
-            );
+    animState.start(TILE_ANIM_FLAG, new FlagAnim(&overlays[ICON_FLAG], {x, y}, flagged),
+        [&overlay=overlay, overlays=overlays, &flagged=flagged] () {
+            if (flagged) overlay = &overlays[ICON_FLAG];
         }
-    }
-    else if (isHidden() && mouseOver) {
-        background = &game->textures.tiles[TTEX_HIGHLIGHT];
-    }
-    
-    else if (isHidden()) {
-        background = &game->textures.tiles[TTEX_HIDDEN];
-        if (!animState.active && overlay == flagTex) {
-            animState.start(new FlagAnim(flagTex, {x, y}, flagged), 
-                [&overlay=overlay, flagTex, &flagged=flagged] () {
-                    // Animation deleted
-                    if (flagged) overlay = flagTex;
-                });
-        }
+    );
+}
 
-        overlay = nullptr;
-    }
-    
-    else if (isMine()) {
-        background = &game->textures.tiles[TTEX_BLANK_SQUARE];
-        overlay = &game->textures.icons[ICON_MINE];
-    }
-    
-    else {
-        if ((background != &game->textures.tiles[TTEX_BLANK_SQUARE]) && !animState.active) {
-            animState.start(new UncoverAnim(background, {x, y}, game->rng), [](){});
-        }
-        background = &game->textures.tiles[TTEX_BLANK_SQUARE];
-        overlay = &game->textures.numbers[countTouchingMines()];
-    }
-    if (isRed) {
-        background = &game->textures.tiles[TTEX_RED_SQUARE];
+void Tile::flag() {
+    setFlagged(true);
+    background = &backgrounds[TTEX_HIDDEN];
+    playFlagAnim();
+}
+
+void Tile::unflag() {
+    setFlagged(false);
+    overlay = nullptr;
+    playFlagAnim();
+}
+
+void Tile::mouseEnter() {
+    if (isHidden() && isUnflagged()) {
+        background = &backgrounds[TTEX_HIGHLIGHT];
     }
 }
 
-void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals) {
-    const bool spaceLeft = col > 0;
-    const bool spaceRight = col < game->cols - 1;
-    const bool spaceAbove = row > 0;
-    const bool spaceBelow = row < game->rows - 1;
+void Tile::mouseLeave() {
+    if (background == &backgrounds[TTEX_HIGHLIGHT]) {
+        background = &backgrounds[TTEX_HIDDEN];
+    }
+}
+
+void Tile::reset() {
+    animState.kill();
+    setMine(false);
+    setFlagged(false);
+    setHidden(true);
+    background = &backgrounds[TTEX_HIDDEN];
+    overlay = nullptr;
+}
+
+void Tile::red() {
+    isRed = true;
+    background = &backgrounds[TTEX_RED_SQUARE];
+}
+
+
+void Tile::flip(bool recurse, Uint32 delay) {
+    setHidden(false);
+    if (isMine()) {
+        background = &backgrounds[TTEX_BLANK_SQUARE];
+        overlay = &overlays[ICON_MINE];
+    }
+    else {
+        int neighboringMines = countTouchingMines();
+
+        playUncoverAnim(delay);
+
+        if (recurse && neighboringMines == 0) {
+            // Recursively reveal surrounding tiles
+            foreach_touching_tile([&recurse, &delay](Tile& tile) {
+                if (tile.isHidden()) {
+                    tile.flip(recurse, delay += 100);
+                }
+            });
+        }
+    }
+}
+
+void Tile::playUncoverAnim(Uint32 delay) {
+        animState.start(TILE_ANIM_UNCOVER,
+                new UncoverAnim(&backgrounds[TTEX_HIDDEN], {x, y}, game->rng),
+                [](){}, delay
+        );
+
+        // Use onstart to set textures to account for `delay` parameter
+        animState.onstart = [this]() {
+            overlay = &numbers[countTouchingMines()];
+            background = &backgrounds[TTEX_BLANK_SQUARE];
+        };
+}
+
+void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals) const {
     const int left = col - 1;
     const int right = col + 1;
     const int below = row + 1;
     const int above = row - 1;
+
+    const bool spaceLeft = left >= 0;
+    const bool spaceRight = right < game->cols;
+    const bool spaceAbove = above >= 0;
+    const bool spaceBelow = below < game->cols;
 
     auto& board = game->board;
 
@@ -142,15 +167,6 @@ void Game::OnUpdate(double dt) {
     /** textures.title **/
     int x_title = screen_width / 2 - textures.title.getWidth() / 2; 
     textures.title.render(x_title, TITLE_SPACE_ABOVE);
-
-    if (!toreveal.empty()) {
-        Tile& tile = *toreveal.front();
-        if (!tile.animState.active || tile.animState.runningTime() > 200) {
-            tile.updateTexture();
-            toreveal.pop_front();
-            if (!toreveal.empty()) toreveal.front()->updateTexture();
-        }
-    }
 
     for (auto& row : board) for (Tile& tile : row) {
         tile.OnUpdate(dt);
@@ -191,15 +207,11 @@ Game::~Game() {
 void Game::restartGame() {
     state = GAME_READY;
     for (auto& row:board) for (auto& tile : row) {
-        tile.setHidden(true);
-        tile.setMine(false);
-        tile.setFlagged(false);
-        tile.isRed = false;
-        tile.updateTexture();
+        tile.reset();
     }
 }
 
-void Game::onMouseButtonDown(SDL_MouseButtonEvent &e) {
+void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
     if (state & GAME_OVER) {
         if (e.button == SDL_BUTTON_LEFT && playAgainBtn.isMouseOver(e.x, e.y)) {
             restartGame();
@@ -212,7 +224,8 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent &e) {
         if (currentHover->isHidden() && currentHover->isUnflagged()) {
             if (state & GAME_STARTED) {
                 // Reveal tile
-                currentHover->reveal();
+                //currentHover->reveal();
+                currentHover->flip();
                 onRevealTile(*currentHover);
             } else {
                 // Build starting area
@@ -222,27 +235,28 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent &e) {
         }
     } else if (e.button == SDL_BUTTON_RIGHT && currentHover->isHidden()) {
         // Flag tile
-        currentHover->setFlagged(currentHover->isUnflagged());
+        if (currentHover->isUnflagged()) {
+            currentHover->flag();
+        } else {
+            currentHover->unflag();
+        }
     }
 
-    currentHover->updateTexture();
 }
 
 void Game::onLost(Tile& mine) {
-    printf("Game lost!\n");
+    printf("Game lost!\n"); fflush(stdout);
     state |= GAME_LOST;
-    mine.reveal();
-    mine.isRed = true;
+    mine.red();
 
     for (auto& row: board) for (Tile& tile : row) {
         if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
             // Reveal all mines
-            tile.reveal();
+            tile.flip();
         }
         else if (tile.isSafe() && tile.isFlagged()) {
             // Incorrect flag
-            tile.isRed = true;
-            tile.updateTexture();
+            tile.red();
         }
     }
 }
@@ -257,49 +271,43 @@ void Game::onRevealTile(Tile& revealed) {
     }
 }
 
-void Game::onMouseButtonUp(SDL_MouseButtonEvent &e) {
+void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
 
 }
 
-static bool containsTile(std::deque<Tile*> tiles, Tile *target) {
-    for (auto t : tiles) {
-        if (t == target) return true;
-    }
-    return false;
-}
-
-void Game::onMouseMove(SDL_Event *e, int x, int y) {
+void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
     if (state & GAME_OVER) {
-        if (currentHover) currentHover->updateTexture(false);
+        if (currentHover) currentHover->mouseLeave();
         currentHover = nullptr;
         return;
     }
     bool overTile = false;
     for (int r = 0; r < rows; ++r) {
         for (int c = 0; c < cols; ++c) {
-            if (board[r][c].isMouseOver(x, y) && !containsTile(toreveal, &board[r][c])) {
+            if (board[r][c].isMouseOver(e.x, e.y)) {
                 overTile = true;
-                if (currentHover) currentHover->updateTexture(false);
-                currentHover = &board[r][c];
-                currentHover->updateTexture(true);
+
+                if (currentHover) currentHover->mouseLeave();
+                (currentHover = &board[r][c])->mouseEnter();
+
                 break;
             }
         }
     }
     if (!overTile && currentHover != nullptr) {
-        currentHover->updateTexture(false);
+        currentHover->mouseLeave();
         currentHover = nullptr;
     }
 }
 
-void Game::flipTiles(Tile& root, int& count, bool diagonals) {
+void Game::flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool diagonals) {
     if (count <= 0) return;
 
     std::vector<Tile *> touching(8);
     std::vector<Tile *> out(touching.size());
     std::vector<Tile *> recurse(touching.size());
 
-    root.foreach_touching_tile([&count, &touching](Tile& tile) {
+    root.foreach_touching_tile([&touching](Tile& tile) {
         touching.push_back(&tile);
     }, diagonals);
 
@@ -312,7 +320,6 @@ void Game::flipTiles(Tile& root, int& count, bool diagonals) {
         count -= 1;
 
         tile->setHidden(false);
-        tile->setMine(false);
         toreveal.push_back(tile);
         recurse.push_back(tile);
     }
@@ -320,30 +327,28 @@ void Game::flipTiles(Tile& root, int& count, bool diagonals) {
 
     for (auto tile : recurse) {
         if (tile == nullptr) continue;
-        flipTiles(*tile, count, false);
+        flipTiles(*tile, count, toreveal, false);
     }
 
 }
 
 void Game::generateStartingArea(Tile& root) {
+    std::vector<Tile*> toreveal;
+
     toreveal.push_back(&root);
 
     root.setHidden(false);
     root.setMine(false);
+
     int count = 20;
     int picknum = 4;
-    flipTiles(root, count, picknum);
+    flipTiles(root, count, toreveal, picknum);
 
     generateMines();
-    for (auto& row:board) for (Tile& tile : row) {
-        if (tile.isRevealed()) {
-            tile.reveal(false);
-        }
-    }
-    for (auto& row:board) for (Tile& tile : row) {
-        if (tile.isRevealed() && !containsTile(toreveal, &tile)) {
-            toreveal.push_back(&tile);
-        }
+    Uint32 delay = 0;
+    for (auto& tile : toreveal) {
+        tile->flip(true, delay);
+        delay += 100;
     }
 }
 
@@ -363,18 +368,16 @@ void Game::generateMines() {
     }
 }
 
-// @pedantic
-
-const char* TILE_FILES[] = {
-    [TTEX_BLANK_SQUARE] = "images/square_blank.png",
-    [TTEX_HIDDEN] = "images/tile.png",
-    [TTEX_HIGHLIGHT] = "images/hovered_tile.png",
-    [TTEX_RED_SQUARE] = "images/square_red.png",
+std::string TILE_FILES[] = {
+    /*[TTEX_BLANK_SQUARE] = */"images/square_blank.png",
+    /*[TTEX_HIDDEN] = */"images/tile.png",
+    /*[TTEX_HIGHLIGHT] = */"images/hovered_tile.png",
+    /*[TTEX_RED_SQUARE] = */"images/square_red.png",
 };
 
-const char* ICON_FILES[] = {
-    [ICON_FLAG] = "images/flag.png",
-    [ICON_MINE] = "images/mine.png",
+std::string ICON_FILES[] = {
+    /*[ICON_FLAG] = */"images/flag.png",
+    /*[ICON_MINE] = */"images/mine.png",
 };
 
 const char* NUMBER_FILES[] = {
@@ -389,7 +392,30 @@ const char* NUMBER_FILES[] = {
     "images/number_8.png",
 };
 
-bool Game::loadMedia(SDL_Window *win) {
+Texture Tile::backgrounds[COUNT_TTEX];
+Texture Tile::overlays[COUNT_ICONS];
+Texture Tile::numbers[NUMBER_TILES_COUNT];
+
+void Tile::loadMedia() {
+    int w = TILE_SIZE;
+    int h = TILE_SIZE;
+    for (int i = 0; i < COUNT_TTEX; ++i) {
+        Tile::backgrounds[i].loadFile(TILE_FILES[i], w, h);
+    }
+
+    for (int i = 0; i < COUNT_ICONS; ++i) {
+        overlays[i].loadFile(ICON_FILES[i], w, h);
+    }
+
+    for (int i = 1; i < COUNT_TILE_NUMBERS; ++i) {
+        if (NUMBER_FILES[i]) {
+            std::string file = NUMBER_FILES[i];
+            numbers[i].loadFile(file, w, h);
+        }
+    }
+}
+
+void Game::loadMedia(SDL_Window *win) {
     // Initialize member variables
     window = win;
     renderer = SDL_GetRenderer(win);
@@ -400,37 +426,15 @@ bool Game::loadMedia(SDL_Window *win) {
     /** Fonts **/
     mainFont = TTF_OpenFont("fonts/Arbutus-Regular.ttf", TITLE_FONT_SIZE);
     if (mainFont == NULL) {
-        printf("Failed to load font! SDL_ttf error: %s\n", TTF_GetError());
-        return FAIL;
+        throw std::runtime_error("Failed to load font! SDL_ttf error: " + std::string(TTF_GetError()));
     }
 
     { /** Title texture **/
         SDL_Color titleColor = { 0, 0, 0 };
-        if (textures.title.loadText(mainFont, "Minesweeper", titleColor) == FAIL) {
-            return FAIL;
-        }
+        textures.title.loadText(mainFont, "Minesweeper", titleColor);
     }
 
-    { /** Tile Textures **/
-        int w = TILE_SIZE;
-        int h = TILE_SIZE;
-        for (int i = 0; i < COUNT_TTEX; ++i) {
-            if (textures.tiles[i].loadFile(TILE_FILES[i], w, h) == FAIL)
-                return FAIL;
-        }
-
-        for (int i = 0; i < COUNT_ICONS; ++i) {
-            if (textures.icons[i].loadFile(ICON_FILES[i], w, h) == FAIL)
-                return FAIL;
-        }
-
-        for (int i = 0; i < COUNT_TILE_NUMBERS; ++i) {
-            if (NUMBER_FILES[i]) {
-                if (textures.numbers[i].loadFile(NUMBER_FILES[i], w, h) == FAIL)
-                    return FAIL;
-            }
-        }
-    }
+    Tile::loadMedia();
 
     int top = TITLE_SPACE_ABOVE + textures.title.getHeight() + TITLE_SPACE_BELOW;
     { /** Tile buttons **/
@@ -441,7 +445,7 @@ bool Game::loadMedia(SDL_Window *win) {
                 Tile &tile = board[row][col];
                 tile.x = left + col * TILE_SIZE;
                 tile.y = top + row * TILE_SIZE;
-                tile.updateTexture();
+                tile.reset();
             }
         }
     }
@@ -455,16 +459,15 @@ bool Game::loadMedia(SDL_Window *win) {
         playAgainBtn.setCenterPos(screen_width / 2, rows * TILE_SIZE + top + 50);
         playAgainBtn.x = (screen_width - playAgainBtn.getWidth()) / 2;
     }
-
-    return OK;
 }
 
 bool Game::hasWon() {
     for (auto& row : board) for (auto& tile : row) {
-        if (tile.isRevealed() && tile.isSafe()) {
+        if (tile.isHidden() && tile.isSafe()) {
             return false;
         }
     }
+    // All tiles that aren't mines have been revealed!
     return true;
 }
 

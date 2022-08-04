@@ -15,11 +15,29 @@
 #define MAX_COLS 24
 #define MAX_ROWS 24
 
+typedef enum {
+    TTEX_BLANK_SQUARE = 0,
+    TTEX_HIDDEN,
+    TTEX_HIGHLIGHT,
+    TTEX_RED_SQUARE,
+    COUNT_TTEX,
+} TileTexture;
+
+typedef enum {
+    ICON_FLAG = 0,
+    ICON_MINE,
+    COUNT_ICONS,
+} TileIcons;
+
+
 class Game;
 
 class Tile : public Button {
 public:
-    void onClick();
+    static Texture backgrounds[COUNT_TTEX];
+    static Texture overlays[COUNT_ICONS];
+    static Texture numbers[NUMBER_TILES_COUNT];
+    static void loadMedia();
 
     Texture *overlay;
 
@@ -40,10 +58,13 @@ public:
     void setFlagged(bool f) { flagged = f; }
     void setHidden(bool f) { hidden = f; }
 
-    //void flag();
-    //void unflag();
-    //void flip();
-    //void reset();
+    void flag();
+    void unflag();
+    void flip(bool flipNeighbors = true, Uint32 delay = 0);
+    void reset();
+    void red();
+    void mouseEnter();
+    void mouseLeave();
 
     void OnUpdate(double dt) {
         render();
@@ -56,11 +77,8 @@ public:
 
     void setGame(Game *parent) { game = parent; }
 
-    void updateTexture(bool mouseOver = false);
-    void foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals = true);
-    int countTouchingMines();
-
-    void reveal(bool update = true);
+    void foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals = true) const;
+    int countTouchingMines() const;
 
     int row;
     int col;
@@ -71,23 +89,13 @@ private:
     bool hidden;
     bool flagged;
 
+    void playFlagAnim();
+    void playUncoverAnim(Uint32 delay);
 
     Game *game;
+
+    static const int TILE_SIZE = 32;
 };
-
-typedef enum {
-    TTEX_BLANK_SQUARE = 0,
-    TTEX_HIDDEN,
-    TTEX_HIGHLIGHT,
-    TTEX_RED_SQUARE,
-    COUNT_TTEX,
-} TileTexture;
-
-typedef enum {
-    ICON_FLAG = 0,
-    ICON_MINE,
-    COUNT_ICONS,
-} TileIcons;
 
 typedef enum {
     GAME_READY = 0,
@@ -108,16 +116,16 @@ public:
 
     // Renderer and window are global
 
-    bool loadMedia(SDL_Window *window);
+    void loadMedia(SDL_Window *window);
     bool initialRender();
 
     void OnUpdate(double dt);
     void OnStart();
 
-    void onMouseButtonDown(SDL_MouseButtonEvent &e);
-    void onMouseButtonUp(SDL_MouseButtonEvent &e);
+    void onMouseButtonDown(SDL_MouseButtonEvent const &e);
+    void onMouseButtonUp(SDL_MouseButtonEvent const &e);
 
-    void onMouseMove(SDL_Event *e, int x, int y);
+    void onMouseMove(SDL_MouseMotionEvent const& e);
 
     int rows, cols;
 
@@ -126,9 +134,6 @@ public:
     struct {
         Texture title;
         Texture playAgain;
-        Texture tiles[COUNT_TTEX];
-        Texture icons[COUNT_ICONS];
-        Texture numbers[COUNT_TILE_NUMBERS];
     } textures;
 
     std::mt19937 rng;
@@ -142,10 +147,9 @@ private:
     bool hasWon();
     void generateStartingArea(Tile& tile);
     void generateMines();
-    void flipTiles(Tile& root, int& count, bool diagonals = true);
+    void flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool diagonals = true);
     void onRevealTile(Tile& tile);
 
-    std::deque<Tile*> toreveal;
 
     SDL_Window *window;
 
