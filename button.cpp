@@ -4,7 +4,7 @@ Button::Button(Texture *tex) : background(tex) {}
 
 Button::~Button() {}
 
-bool Button::isMouseOver(int mouseX, int mouseY) {
+bool Button::isMouseOver(int mouseX, int mouseY) const {
     // Rather verbose which is fine.
     const int sideLeft = x;
     const int sideTop = y;

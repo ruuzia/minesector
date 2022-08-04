@@ -2,6 +2,7 @@
 #define BUTTON_H
 
 #include "texture.h"
+#include <functional>
 
 
 class Button {
@@ -14,11 +15,11 @@ public:
 
     const Texture* background;
 
-    bool isMouseOver(int mouseX, int mouseY);
+    bool isMouseOver(int mouseX, int mouseY) const;
 
-    virtual void onClick(SDL_Event *e) {}
+    std::function<void()> onclick();
 
-    virtual void render() {
+    virtual void render()  {
         background->render(x, y);
     }
 
