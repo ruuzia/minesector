@@ -14,53 +14,48 @@ const int SCREEN_HEIGHT = 480 * 1.5;
 
 SDL_Renderer *renderer;
 
-static bool init(SDL_Window * &window) {
-    window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    if (window == NULL) {
-        printf("Unable to create window. SDL Error: %s\n", SDL_GetError());
-        return FAIL;
+class SDL {
+public:
+    SDL() {
+        window = nullptr;
+        renderer = nullptr;
+    }
+    ~SDL() {
+        SDL_DestroyRenderer(renderer);
+        renderer = nullptr;
+
+        SDL_DestroyWindow(window);
+        window = nullptr;
     }
 
+    bool init();
+    SDL_Window *window;
+};
+
+bool SDL::init() {
+    window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    if (window == NULL) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
+
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == NULL) {
-        printf("Unable to create accelerated renderer. SDL Error: %s\n", SDL_GetError());
-        return FAIL;
-    }
+    if (renderer == NULL)
+        throw std::runtime_error("Unable to create accelerated renderer. SDL Error: " + std::string(SDL_GetError()));
 
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
     int imgFlags = IMG_INIT_PNG;
-    if (!(IMG_Init(imgFlags)& imgFlags)) {
-        printf("SDL_image could not initialize. SDL_image Error: %s\n", IMG_GetError());
-        return FAIL;
-    }
+    if (!(IMG_Init(imgFlags) & imgFlags))
+        throw std::runtime_error("SDL_image could not initialize. SDL_image Error: " + std::string(IMG_GetError()));
 
     if (TTF_Init() == -1) {
-        printf("SDL_ttf could not initialize. SDL_ttf error: %s\n", TTF_GetError());
+        throw std::runtime_error("SDL_ttf could not initialize. SDL_ttf error: " + std::string(TTF_GetError()));
     }
     
     return OK;
 }
 
 
-static bool loadMedia(SDL_Window *window, Game &game) {
-    if (game.loadMedia(window) == FAIL) {
-        return FAIL;
-    }
-    return OK;
-}
-
-[[ noreturn ]] static void close(int exitCode, SDL_Window *window) {
-    SDL_DestroyRenderer(renderer);
-    renderer = NULL;
-
-    SDL_DestroyWindow(window);
-    window = NULL;
-
-    IMG_Quit();
-    SDL_Quit();
-
-    exit(exitCode);
+static void loadMedia(SDL const& sdl, Game &game) {
+    game.loadMedia(sdl.window);
 }
 
 static bool Update(Game &game, double dt) {
@@ -88,7 +83,7 @@ static bool Update(Game &game, double dt) {
             break;
 
         case SDL_MOUSEMOTION:
-            game.onMouseMove(&e, e.motion.x, e.motion.y);
+            game.onMouseMove(e.motion);
             break;
         }
     }
@@ -99,25 +94,34 @@ static bool Update(Game &game, double dt) {
     return false;
 }
 
-const int TITLE_FONT_SIZE = 28;
-
 int main(int argc, char **argv) {
     (void)argc; (void) argv;
 
-    Game game(10, 10);
-    SDL_Window *window;
+    SDL sdl;
 
-    if (init(window) == FAIL) {
-        close(1, window);
+    Game game(10, 10);
+
+
+    try {
+        sdl.init();
+    }
+    catch (const std::runtime_error& ex) {
+        printf("Failed to initialize SDL.\n%s\n", ex.what());
+        return 1;
     }
 
-    if (loadMedia(window, game) == FAIL) {
-        close(1, window);
+    try {
+        loadMedia(sdl, game);
+    }
+    catch (const std::runtime_error& ex) {
+        printf("Failed to load media.\n%s\n", ex.what());
+        return 1;
     }
 
     bool quit = false;
     Uint32 lastFrame = SDL_GetTicks();
     game.OnStart();
+
     while (!quit) {
         Uint32 current = SDL_GetTicks();
         double dt = (current - lastFrame) / 1000.0;
@@ -125,5 +129,5 @@ int main(int argc, char **argv) {
         quit = Update(game, dt);
     }
 
-    close(0, window);
+    return 0;
 }
