@@ -4,13 +4,13 @@
 #include "texture.h"
 #include <functional>
 #include <random>
-
+#include <memory>
 
 typedef std::function<void()> callback;
 
 class Anim {
 public:
-    virtual ~Anim() {}
+    virtual ~Anim() = default;
 
     virtual void OnStart() = 0;
     virtual bool OnUpdate(double dt) = 0;
@@ -21,21 +21,23 @@ public:
     AnimState();
 
     void update(double dt);
-    void start(Anim* anim, callback onfinish);
+    void start(int code, Anim* anim, callback onfinish, Uint32 delay = 0);
+    void kill();
     Uint32 runningTime() {
         return SDL_GetTicks() - startTime;
     }
 
     Uint64 current;
-    bool active;
+    int active;
 
+    callback onstart;
 private:
-
+    bool started;
     Uint32 startTime;
-    Uint32 length;
     callback onfinish;
 
     Anim* anim;
+    //std::unique_ptr<Anim> anim;
 };
 
 
@@ -64,15 +66,14 @@ public:
     // Call virtual destructor, nothing to free
     ~UncoverAnim() {}
 
-    void OnStart();
-    bool OnUpdate(double dt);
+    void OnStart() override;
+    bool OnUpdate(double dt) override;
 
 private:
     const Texture *hidden;
     SDL_Point pos;
     std::mt19937 &rng;
 
-    SDL_Rect clip;
     double widthPercent;
     double heightPercent;
     double deltaWidth;
