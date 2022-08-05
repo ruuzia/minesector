@@ -7,3 +7,4 @@ sdlminesweeper
 CMakeFiles/*
 build/*
 CMakeCache.txt
+compile_commands.json
