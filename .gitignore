@@ -2,9 +2,12 @@
 .clangd*
 *.o
 main
+main.exe
 src/main
 sdlminesweeper
 CMakeFiles/*
 build/*
 CMakeCache.txt
 compile_commands.json
+cmake_install.cmake
+Makefile
