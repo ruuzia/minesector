@@ -2,7 +2,6 @@
 #include "game.h"
 
 #include <algorithm>
-//#include <experimental/algorithm>
 
 const int TITLE_FONT_SIZE = 40;
 const int TITLE_SPACE_ABOVE = 15;
@@ -272,6 +271,7 @@ void Game::onRevealTile(Tile& revealed) {
 }
 
 void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
+    (void)e;
 
 }
 
@@ -304,16 +304,17 @@ void Game::flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool 
     if (count <= 0) return;
 
     std::vector<Tile *> touching(8);
-    std::vector<Tile *> out(touching.size());
+    //std::vector<Tile *> out(touching.size());
     std::vector<Tile *> recurse(touching.size());
 
     root.foreach_touching_tile([&touching](Tile& tile) {
         touching.push_back(&tile);
     }, diagonals);
 
-    std::sample(touching.begin(), touching.end(), std::back_inserter(out), touching.size(), rng);
+    //std::sample(touching.begin(), touching.end(), std::back_inserter(out), touching.size(), rng);
+    std::shuffle(touching.begin(), touching.end(), rng);
     
-    for (auto tile : out) {
+    for (auto tile : touching) {
         if (tile == nullptr) continue;
         if (tile->isRevealed()) continue;
 
@@ -430,7 +431,7 @@ void Game::loadMedia(SDL_Window *win) {
     }
 
     { /** Title texture **/
-        SDL_Color titleColor = { 0, 0, 0 };
+        SDL_Color titleColor = { 0, 0, 0, 0 };
         textures.title.loadText(mainFont, "Minesweeper", titleColor);
     }
 

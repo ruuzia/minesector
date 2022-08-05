@@ -25,7 +25,7 @@ bool Button::isMouseOver(int mouseX, int mouseY) const {
 TextButton::TextButton() : Button() {
     font = nullptr;
     string = nullptr;
-    color = {0, 0, 0};
+    color = {0, 0, 0, 0};
     scale = 1.0;
     borderWidth = 15;
     bgcolor = {0xF0, 0xF0, 0xF0, 0xE0};

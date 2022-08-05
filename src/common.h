@@ -1,6 +1,6 @@
 #ifndef COMMON_H
 #define COMMON_H
-#include "SDL2/SDL.h"
+#include "SDL.h"
 
 #define OK true
 #define FAIL false
