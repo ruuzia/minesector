@@ -2,3 +2,8 @@
 .clangd*
 *.o
 main
+src/main
+sdlminesweeper
+CMakeFiles/*
+build/*
+CMakeCache.txt
