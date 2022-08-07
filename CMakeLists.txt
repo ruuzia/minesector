@@ -24,6 +24,7 @@ set( SOURCES
     src/game.cpp
     src/button.cpp
     src/anim.cpp
+    src/text.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
