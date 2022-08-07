@@ -31,16 +31,20 @@ int Tile::countTouchingMines() const {
     return nearbyMines;
 }
 
-typedef enum {
-    TILE_ANIM_FLAG = 1,
-    TILE_ANIM_UNCOVER,
-} TileAnims;
+enum TileAnim {
+    FLAG = 1,
+    UNCOVER,
+    REVEALMINE,
+};
 
 
 void Tile::playFlagAnim() {
-    if (animState.active == TILE_ANIM_FLAG) return;
+    if (animState.active == TileAnim::FLAG) return;
 
-    animState.start(TILE_ANIM_FLAG, new FlagAnim(&overlays[ICON_FLAG], {x, y}, flagged),
+    overlay = nullptr;
+    //background = &backgrounds[TTEX_HIDDEN];
+
+    animState.start(TileAnim::FLAG, new FlagAnim(&overlays[ICON_FLAG], {x, y}, flagged),
         [&overlay=overlay, overlays=overlays, &flagged=flagged] () {
             if (flagged) overlay = &overlays[ICON_FLAG];
         }
@@ -49,13 +53,11 @@ void Tile::playFlagAnim() {
 
 void Tile::flag() {
     setFlagged(true);
-    background = &backgrounds[TTEX_HIDDEN];
     playFlagAnim();
 }
 
 void Tile::unflag() {
     setFlagged(false);
-    overlay = nullptr;
     playFlagAnim();
 }
 
@@ -78,6 +80,7 @@ void Tile::reset() {
     setHidden(true);
     background = &backgrounds[TTEX_HIDDEN];
     overlay = nullptr;
+    isRed = false;
 }
 
 void Tile::red() {
@@ -89,8 +92,15 @@ void Tile::red() {
 void Tile::flip(bool recurse, Uint32 delay) {
     setHidden(false);
     if (isMine()) {
-        background = &backgrounds[TTEX_BLANK_SQUARE];
-        overlay = &overlays[ICON_MINE];
+        overlay = nullptr;
+
+        animState.start(TileAnim::REVEALMINE, new MineRevealAnim({x,y}, TILE_SIZE), [this](){
+                overlay = &overlays[ICON_MINE];
+        }, delay);
+
+        animState.onstart = [this](){
+            background = &backgrounds[TTEX_BLANK_SQUARE];
+        };
     }
     else {
         int neighboringMines = countTouchingMines();
@@ -109,7 +119,7 @@ void Tile::flip(bool recurse, Uint32 delay) {
 }
 
 void Tile::playUncoverAnim(Uint32 delay) {
-        animState.start(TILE_ANIM_UNCOVER,
+        animState.start(TileAnim::UNCOVER,
                 new UncoverAnim(&backgrounds[TTEX_HIDDEN], {x, y}, game->rng),
                 [](){}, delay
         );
@@ -161,7 +171,7 @@ void Game::OnStart() {
 
 void Game::OnUpdate(double dt) {
     int screen_width;
-    SDL_GetWindowSize(window, &screen_width, NULL);
+    SDL_GetWindowSize(window, &screen_width, nullptr);
 
     /** textures.title **/
     int x_title = screen_width / 2 - textures.title.getWidth() / 2; 
@@ -171,7 +181,9 @@ void Game::OnUpdate(double dt) {
         tile.OnUpdate(dt);
     }
 
-    if (state & GAME_OVER) {
+    animState.update(dt);
+
+    if (state & GameState::OVER) {
         playAgainBtn.render();
     }
 }
@@ -182,7 +194,7 @@ Game::Game(int rows, int cols) : rows(rows), cols(cols) {
     mainFont = nullptr;
     currentHover = nullptr;
     board.resize(rows, std::vector<Tile>(cols));
-    state = GAME_READY;
+    state = GameState::READY;
 
     rng.seed(std::random_device{}());
 
@@ -204,14 +216,15 @@ Game::~Game() {
 }
 
 void Game::restartGame() {
-    state = GAME_READY;
+    state = GameState::READY;
+    animState.kill();
     for (auto& row:board) for (auto& tile : row) {
         tile.reset();
     }
 }
 
 void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
-    if (state & GAME_OVER) {
+    if (state & GameState::OVER) {
         if (e.button == SDL_BUTTON_LEFT && playAgainBtn.isMouseOver(e.x, e.y)) {
             restartGame();
         }
@@ -221,15 +234,13 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
 
     if (e.button == SDL_BUTTON_LEFT) {
         if (currentHover->isHidden() && currentHover->isUnflagged()) {
-            if (state & GAME_STARTED) {
-                // Reveal tile
-                //currentHover->reveal();
+            if (state & GameState::STARTED) {
                 currentHover->flip();
                 onRevealTile(*currentHover);
             } else {
                 // Build starting area
                 generateStartingArea(*currentHover);
-                state |= GAME_STARTED;
+                state |= GameState::STARTED;
             }
         }
     } else if (e.button == SDL_BUTTON_RIGHT && currentHover->isHidden()) {
@@ -243,20 +254,59 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
 
 }
 
+enum GameAnims {
+    EXPLODE = 1,
+};
+
 void Game::onLost(Tile& mine) {
     printf("Game lost!\n"); fflush(stdout);
-    state |= GAME_LOST;
+
+    state |= GameState::LOST;
+
+    mine.animState.kill();
     mine.red();
 
-    for (auto& row: board) for (Tile& tile : row) {
-        if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
-            // Reveal all mines
-            tile.flip();
+    animState.start(GameAnims::EXPLODE,
+                    new DetonationAnim(rng, {mine.x, mine.y}, &textures.detonationParticle),
+                   [this](){
+        for (auto& row: board) for (Tile& tile : row) {
+                if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
+                    // Reveal all mines
+                    tile.flip();
+                }
+                else if (tile.isSafe() && tile.isFlagged()) {
+                    // Incorrect flag
+                    tile.red();
+                }
+            }
+    });
+
+    std::vector<Tile *> mines;
+    double delay = 0;
+    for (auto& row : board) for (Tile& tile : row) {
+        if (tile.isMine() && tile.isUnflagged()) {
+            mines.push_back(&tile);
         }
-        else if (tile.isSafe() && tile.isFlagged()) {
-            // Incorrect flag
-            tile.red();
-        }
+    }
+    std::sort(mines.begin(), mines.end(), [&mine](const Tile *a, const Tile *b) {
+            const int aX = a->x - mine.x;
+            const int aY = a->y - mine.y;
+
+            const int bX = b->x - mine.x;
+            const int bY = b->y - mine.y;
+
+            const int aDistSq = aX*aX + aY*aY;
+            const int bDistSq = bX*bX + bY*bY;
+
+            return aDistSq < bDistSq;
+    });
+
+    const double deltaDelay = 5.0 / mines.size();
+
+    // Skip first item, the detonated mine
+    for (auto it = mines.begin() + 1; it != mines.end(); ++it) {
+        (*it)->flip(false, (Uint32)(delay*1000));
+        delay += deltaDelay;
     }
 }
 
@@ -266,7 +316,7 @@ void Game::onRevealTile(Tile& revealed) {
     }
     else if (hasWon()) {
         printf("Game won!\n");
-        state |= GAME_WON;
+        state |= GameState::WON;
     }
 }
 
@@ -276,7 +326,7 @@ void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
 }
 
 void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
-    if (state & GAME_OVER) {
+    if (state & GameState::OVER) {
         if (currentHover) currentHover->mouseLeave();
         currentHover = nullptr;
         return;
@@ -422,11 +472,11 @@ void Game::loadMedia(SDL_Window *win) {
     renderer = SDL_GetRenderer(win);
 
     int screen_width;
-    SDL_GetWindowSize(window, &screen_width, NULL);
+    SDL_GetWindowSize(window, &screen_width, nullptr);
 
     /** Fonts **/
     mainFont = TTF_OpenFont("fonts/Arbutus-Regular.ttf", TITLE_FONT_SIZE);
-    if (mainFont == NULL) {
+    if (mainFont == nullptr) {
         throw std::runtime_error("Failed to load font! SDL_ttf error: " + std::string(TTF_GetError()));
     }
 
@@ -450,6 +500,9 @@ void Game::loadMedia(SDL_Window *win) {
             }
         }
     }
+
+    std::string f = "images/detonationParticle.png";
+    textures.detonationParticle.loadFile(f, 32, 32);
 
     { /** Play Again Button **/
         playAgainBtn.setColor(0x00, 0xC0, 0x00);

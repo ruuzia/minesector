@@ -34,8 +34,8 @@ void Texture::renderPart(int x, int y, const SDL_Rect *rect) const {
     const SDL_Rect srcrect = {
         .x = rect->x,
         .y = rect->y,
-        .w = rect->w * (int) (imgWidth / (float)width), 
-        .h = rect->h * (int) (imgHeight / (float)height),
+        .w = rect->w * (int) ((float)imgWidth / (float)width),
+        .h = rect->h * (int) ((float)imgHeight / (float)height),
     };
 
     const SDL_Rect dstrect = {
@@ -63,12 +63,12 @@ void Texture::loadFile(std::string& path) {
 
     // Directly load image to texture
     texture = IMG_LoadTexture(renderer, path.c_str());
-    if (texture == NULL) {
+    if (texture == nullptr) {
         throw std::runtime_error("Unable to create texture from image " + path + ". SDL_image error: " + std::string(IMG_GetError()));
     }
 
     // Get width and height of texture
-    if (SDL_QueryTexture(texture, NULL, NULL, &width, &height) < 0) {
+    if (SDL_QueryTexture(texture, nullptr, nullptr, &width, &height) < 0) {
         throw std::runtime_error("Unable to query texture. SDL error: " + std::string(SDL_GetError()));
     }
 
@@ -81,12 +81,12 @@ void Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
 
     // Need to create temp surface and convert to texture
     SDL_Surface *tmpSurface = TTF_RenderText_Solid(font, text, color);
-    if (tmpSurface == NULL) {
+    if (tmpSurface == nullptr) {
         throw std::runtime_error("Unable to load text. SDL_ttf error: " + std::string(TTF_GetError()));
     }
 
     texture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
-    if (texture == NULL) {
+    if (texture == nullptr) {
         throw std::runtime_error("Unable to create texture from text. SDL error: " + std::string(SDL_GetError()));
     }
     width = tmpSurface->w;

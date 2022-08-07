@@ -12,7 +12,6 @@ void AnimState::start(int code, Anim* anim_, callback onfinish, Uint32 delay) {
     active = code;
     started = false;
     startTime = SDL_GetTicks() + delay;
-
     //anim.reset(anim_);
     if (anim) delete anim;
     anim = anim_;
@@ -33,7 +32,6 @@ void AnimState::update(double dt) {
 
     if (!started) {
         if (SDL_GetTicks() >= startTime) {
-            startTime = SDL_GetTicks();
             started = true;
             anim->OnStart();
             if (onstart) { onstart(); }
@@ -50,7 +48,7 @@ void AnimState::update(double dt) {
 const double FLAG_ROT_POINT_X = 18 / 64.0;
 const double FLAG_ROT_POINT_Y = 57 / 64.0;
 
-FlagAnim::FlagAnim(Texture *flagTex, SDL_Point pos, bool&isFlagged) : flag(flagTex), pos(pos), isFlagged(isFlagged)
+FlagAnim::FlagAnim(const Texture *flagTex, SDL_Point pos, bool&isFlagged) : flag(flagTex), pos(pos), isFlagged(isFlagged)
 {
     rotPoint.x = (int)(FLAG_ROT_POINT_X * flag->getWidth());
     rotPoint.y = (int)(FLAG_ROT_POINT_Y * flag->getHeight());
@@ -68,7 +66,7 @@ bool FlagAnim::OnUpdate(double dt) {
     if (isFlagged) angle -= deltaAngle * dt;
     else angle += deltaAngle * dt;
     
-    flag->render(pos.x, pos.y, NULL, angle, &rotPoint);
+    flag->render(pos.x, pos.y, nullptr, angle, &rotPoint);
     return true;
 }
 
@@ -115,3 +113,86 @@ bool UncoverAnim::OnUpdate(double dt) {
     return true;
 }
 
+
+DetonationAnim::DetonationAnim(std::mt19937& rng, SDL_Point tilePos, const Texture *particle)
+    : particleTex(particle), rng(rng)
+{
+    pos.x = tilePos.x + particle->getWidth() / 2;
+    pos.y = tilePos.y + particle->getHeight() / 2;
+}
+
+void DetonationAnim::OnStart() {
+    startTime = SDL_GetTicks() * 0.001;
+}
+
+bool DetonationAnim::OnUpdate(double dt) {
+    if (SDL_GetTicks()*0.001 - startTime < PARTICLE_EMIT_TIME) {
+        if (particles.empty() || particles.back().age() > 0.1) {
+            for (int i = 0; i < 3; ++i)
+            particles.emplace_back(rng, particleTex, pos.x, pos.y);
+        }
+    }
+
+    bool rendering = false;
+    for (auto& particle : particles) {
+        if (!particle.isDead()) {
+            particle.render(dt);
+            rendering = true;
+        }
+    }
+
+    return rendering;
+}
+
+DetonationParticle::DetonationParticle(std::mt19937& rng, const Texture*tex, int x, int y)
+    : x(x), y(y), rng(rng), texture(tex)
+{
+    const float MAX_SPEED = 150;
+    born = SDL_GetTicks() * 0.001;
+    dx = std::uniform_real_distribution{-MAX_SPEED, MAX_SPEED} (rng);
+    dy = std::uniform_real_distribution(-MAX_SPEED, MAX_SPEED) (rng);
+    lifetime = std::uniform_real_distribution(1.0, 2.0) (rng);
+
+    colorAlpha = 1.0;
+    colorRed = 1.0;
+    colorGreen = std::uniform_real_distribution<>(0.0, 0.6) (rng);
+    colorBlue = 0.0;
+}
+
+
+const double DetonationParticle::DELTA_ALPHA = -0.2;
+
+
+void DetonationParticle::render(double dt) {
+    x += dx * dt;
+    y += dy * dt;
+    colorAlpha += DELTA_ALPHA * dt;
+
+    SDL_SetRenderDrawColor(renderer, (int)(0xFF*colorRed), (int)(0xFF*colorGreen), (int) (0xFF*colorBlue), (int) (0xFF*colorAlpha));
+    SDL_Rect fillrect;
+    fillrect.w = 12;
+    fillrect.h = 12;
+    fillrect.x = x;
+    fillrect.y = y;
+
+    SDL_RenderFillRect(renderer, &fillrect);
+}
+
+const double MineRevealAnim::DELTA_ALPHA = -1.0;
+
+MineRevealAnim::MineRevealAnim(SDL_Point pos, int size) : pos(pos), size(size) {
+    alpha = 1.0;
+}
+
+void MineRevealAnim::OnStart() {
+}
+
+bool MineRevealAnim::OnUpdate(double dt) {
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0x00, 0x00, (int)(alpha*0xFF));
+    SDL_Rect fillrect { pos.x, pos.y, size, size };
+    SDL_RenderFillRect(renderer, &fillrect);
+
+    alpha += DELTA_ALPHA * dt;
+
+    return alpha > 0.3;
+}

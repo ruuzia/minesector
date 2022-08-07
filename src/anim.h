@@ -43,7 +43,7 @@ private:
 
 class FlagAnim : public Anim {
 public:
-    FlagAnim(Texture *flagTex, SDL_Point pos, bool& isFlagged);
+    FlagAnim(const Texture *flagTex, SDL_Point pos, bool& isFlagged);
 
     // Call virtual destructor
     ~FlagAnim() {}
@@ -52,7 +52,7 @@ public:
     void OnStart();
 
 private:
-    Texture* flag;
+    const Texture* flag;
     SDL_Point pos;
     bool& isFlagged;
     double angle;
@@ -81,5 +81,78 @@ private:
     bool inverseX;
     bool inverseY;
 };
+
+// If I add more particles, I'll make a parent Particle class
+// But that's a lot of boilerplate for a single particle effect
+class DetonationParticle {
+public:
+    DetonationParticle(std::mt19937& rng, const Texture*tex, int x=0, int y=0);
+    ~DetonationParticle() = default;
+
+    [[nodiscard]] bool isDead() const {
+        return age() > lifetime;
+    }
+
+    void render(double dt);
+
+    [[nodiscard]] double age() const {
+        return (double)SDL_GetTicks() * 0.001 - born;
+    }
+private:
+    double lifetime;
+    double dx;
+    double dy;
+
+    float x;
+    float y;
+    std::mt19937& rng;
+    double born;
+    const Texture *texture;
+
+    double colorAlpha;
+    double colorRed;
+    double colorGreen;
+    double colorBlue;
+
+    static const double DELTA_ALPHA;
+};
+
+class DetonationAnim : public Anim {
+public:
+    DetonationAnim(std::mt19937& rng, SDL_Point pos, const Texture *particle);
+    ~DetonationAnim() override = default;
+
+    void OnStart() override;
+    bool OnUpdate(double  dt) override;
+
+private:
+    const Texture* particleTex;
+    SDL_Point pos;
+    std::vector<DetonationParticle> particles;
+
+
+    double startTime;
+    double PARTICLE_EMIT_TIME = 5.0;
+
+    std::mt19937& rng;
+};
+
+
+class MineRevealAnim : public Anim {
+public:
+    MineRevealAnim(SDL_Point pos, int size);
+    ~MineRevealAnim() override = default;
+
+    void OnStart() override;
+    bool OnUpdate(double dt) override;
+
+private:
+    SDL_Point pos;
+    int size;
+
+    double alpha;
+    static const double DELTA_ALPHA;
+};
+
 
 #endif

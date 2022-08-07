@@ -43,16 +43,16 @@ public:
 
     void render();
 
-    Tile(Texture *tex = nullptr);
+    explicit Tile(Texture *tex = nullptr);
 
-    bool isMine() const { return mine; }
-    bool isSafe() const { return !mine; }
+    [[nodiscard]] bool isMine() const { return mine; }
+    [[nodiscard]] bool isSafe() const { return !mine; }
 
-    bool isHidden() const { return hidden; }
-    bool isRevealed() const { return !hidden; }
+    [[nodiscard]] bool isHidden() const { return hidden; }
+    [[nodiscard]] bool isRevealed() const { return !hidden; }
 
-    bool isFlagged() const { return flagged; }
-    bool isUnflagged() const { return !flagged; }
+    [[nodiscard]] bool isFlagged() const { return flagged; }
+    [[nodiscard]] bool isUnflagged() const { return !flagged; }
 
     void setMine(bool f) { mine = f; }
     void setFlagged(bool f) { flagged = f; }
@@ -97,13 +97,13 @@ private:
     static const int TILE_SIZE = 32;
 };
 
-typedef enum {
-    GAME_READY = 0,
-    GAME_STARTED = 1,
-    GAME_WON = 2,
-    GAME_LOST = 4,
-    GAME_OVER = GAME_WON | GAME_LOST,
-} GameState;
+enum GameState {
+    READY = 0,
+    STARTED = 1,
+    WON = 2,
+    LOST = 4,
+    OVER = GameState::WON | GameState::LOST,
+};
 
 #define COUNT_TILE_NUMBERS 8
 
@@ -134,9 +134,12 @@ public:
     struct {
         Texture title;
         Texture playAgain;
+        Texture detonationParticle;
     } textures;
 
     std::mt19937 rng;
+
+    AnimState animState;
 
 private:
     TextButton playAgainBtn;

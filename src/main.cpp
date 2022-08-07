@@ -5,9 +5,7 @@
 
 #include <cstdio>
 
-#include "common.h"
 #include "texture.h"
-#include "button.h"
 #include "game.h"
 
 const int SCREEN_WIDTH =  640 * 1.5;
@@ -29,16 +27,16 @@ public:
         window = nullptr;
     }
 
-    bool init();
+    void init();
     SDL_Window *window;
 };
 
-bool SDL::init() {
+void SDL::init() {
     window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-    if (window == NULL) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
+    if (window == nullptr) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    if (renderer == NULL)
+    if (renderer == nullptr)
         throw std::runtime_error("Unable to create accelerated renderer. SDL Error: " + std::string(SDL_GetError()));
 
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -50,8 +48,6 @@ bool SDL::init() {
     if (TTF_Init() == -1) {
         throw std::runtime_error("SDL_ttf could not initialize. SDL_ttf error: " + std::string(TTF_GetError()));
     }
-    
-    return OK;
 }
 
 
@@ -61,6 +57,7 @@ static void loadMedia(SDL const& sdl, Game &game) {
 
 static bool Update(Game &game, double dt) {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderClear(renderer);
 
     SDL_Event e;
@@ -100,7 +97,7 @@ int main(int argc, char **argv) {
 
     SDL sdl;
 
-    Game game(10, 10);
+    Game game(14, 14);
 
 
     try {

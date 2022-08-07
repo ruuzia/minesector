@@ -16,10 +16,10 @@ public:
 
     void loadFile(std::string& path);
 
-    // Overload to also set width and height
-    void loadFile(std::string& file, int width, int height) {
+    // Overload to also set w and h
+    void loadFile(std::string& file, int w, int h) {
         loadFile(file);
-        setSize(width, height);
+        setSize(w, h);
     }
 
     void loadText(TTF_Font *font, const char* text, SDL_Color color);
@@ -27,12 +27,12 @@ public:
     void free();
 
     // Render at a point on screen
-    void render(int x, int y, SDL_Rect *clip = NULL, double angle = 0.0, SDL_Point *center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE) const;
+    void render(int x, int y, SDL_Rect *clip = nullptr, double angle = 0.0, SDL_Point *center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE) const;
 
     void renderPart(int x, int y, const SDL_Rect *rect) const;
 
-    int getWidth() const { return width; }
-    int getHeight() const { return height; }
+    [[nodiscard]] int getWidth() const { return width; }
+    [[nodiscard]] int getHeight() const { return height; }
 
     void setSize(int w, int h) {
         width = w;
@@ -40,15 +40,15 @@ public:
     }
 
     void setScale(double f) {
-        width = imgWidth * f;
-        height = imgHeight * f;
+        width = (int) (imgWidth * f);
+        height = int (imgHeight * f);
     }
 
     void setMultColor(double r, double g, double b) {
         SDL_SetTextureColorMod(texture, (Uint8)r*255, (Uint8)g*255, (Uint8)b*255);
     }
 
-    bool loaded() const {
+    [[nodiscard]] bool loaded() const {
         return texture != nullptr;
     }
 
