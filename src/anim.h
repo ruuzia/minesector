@@ -86,7 +86,7 @@ private:
 // But that's a lot of boilerplate for a single particle effect
 class DetonationParticle {
 public:
-    DetonationParticle(std::mt19937& rng, const Texture*tex, int x=0, int y=0);
+    DetonationParticle(std::mt19937& rng, int x=0, int y=0);
     ~DetonationParticle() = default;
 
     [[nodiscard]] bool isDead() const {
@@ -107,7 +107,6 @@ private:
     float y;
     std::mt19937& rng;
     double born;
-    const Texture *texture;
 
     double colorAlpha;
     double colorRed;
@@ -119,14 +118,13 @@ private:
 
 class DetonationAnim : public Anim {
 public:
-    DetonationAnim(std::mt19937& rng, SDL_Point pos, const Texture *particle);
+    DetonationAnim(std::mt19937& rng, SDL_Point pos, int size);
     ~DetonationAnim() override = default;
 
     void OnStart() override;
     bool OnUpdate(double  dt) override;
 
 private:
-    const Texture* particleTex;
     SDL_Point pos;
     std::vector<DetonationParticle> particles;
 

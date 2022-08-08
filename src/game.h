@@ -71,8 +71,6 @@ public:
         animState.update(dt);
     }
 
-    int number;
-
     bool isRed;
 
     void setGame(Game *parent) { game = parent; }
@@ -131,28 +129,33 @@ public:
 
     std::vector<std::vector<Tile> > board;
 
-    struct {
-        Texture title;
-        Texture playAgain;
-        Texture detonationParticle;
-    } textures;
-
     std::mt19937 rng;
 
     AnimState animState;
+    void updateFlagCount();
+
+    int mineCount;
 
 private:
+    Text title;
+    Text flagCounter;
+    TextButton restartBtn;
     TextButton playAgainBtn;
-    bool started;
+    std::vector<TextButton> difficultyBtns;
 
+    TextButton& activeRestartButton();
+
+    void ready();
+    void resizeBoard();
     void restartGame();
+    void positionItems();
     void onLost(Tile& mine);
     bool hasWon();
     void generateStartingArea(Tile& tile);
     void generateMines();
     void flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool diagonals = true);
-    void onRevealTile(Tile& tile);
 
+    void onRevealTile(Tile& tile);
 
     SDL_Window *window;
 

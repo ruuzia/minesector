@@ -23,6 +23,9 @@ void AnimState::kill() {
         active = 0;
         delete anim;
         anim = nullptr;
+        if (onstart) onstart();
+        // Remove onstart!
+        onstart = nullptr;
         if (onfinish) onfinish();
     }
 }
@@ -114,11 +117,11 @@ bool UncoverAnim::OnUpdate(double dt) {
 }
 
 
-DetonationAnim::DetonationAnim(std::mt19937& rng, SDL_Point tilePos, const Texture *particle)
-    : particleTex(particle), rng(rng)
+DetonationAnim::DetonationAnim(std::mt19937& rng, SDL_Point tilePos, int size)
+    : rng(rng)
 {
-    pos.x = tilePos.x + particle->getWidth() / 2;
-    pos.y = tilePos.y + particle->getHeight() / 2;
+    pos.x = tilePos.x + size / 2;
+    pos.y = tilePos.y + size / 2;
 }
 
 void DetonationAnim::OnStart() {
@@ -129,7 +132,7 @@ bool DetonationAnim::OnUpdate(double dt) {
     if (SDL_GetTicks()*0.001 - startTime < PARTICLE_EMIT_TIME) {
         if (particles.empty() || particles.back().age() > 0.1) {
             for (int i = 0; i < 3; ++i)
-            particles.emplace_back(rng, particleTex, pos.x, pos.y);
+            particles.emplace_back(rng, pos.x, pos.y);
         }
     }
 
@@ -144,8 +147,8 @@ bool DetonationAnim::OnUpdate(double dt) {
     return rendering;
 }
 
-DetonationParticle::DetonationParticle(std::mt19937& rng, const Texture*tex, int x, int y)
-    : x(x), y(y), rng(rng), texture(tex)
+DetonationParticle::DetonationParticle(std::mt19937& rng, int x, int y)
+    : x(x), y(y), rng(rng)
 {
     const float MAX_SPEED = 150;
     born = SDL_GetTicks() * 0.001;

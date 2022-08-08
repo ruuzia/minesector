@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
     SDL sdl;
 
-    Game game(14, 14);
+    Game game(12, 12);
 
 
     try {

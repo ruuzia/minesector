@@ -1,13 +1,22 @@
 #include "common.h"
 #include "game.h"
+#include <string>
 
 #include <algorithm>
 
 const int TITLE_FONT_SIZE = 40;
 const int TITLE_SPACE_ABOVE = 15;
-const int TITLE_SPACE_BELOW = 45;
 const int TILE_SIZE = 32;
 const float PERCENT_MINES = 0.20;
+
+const struct {int cols; int rows; } SIZES[] = { {3, 3}, {12, 10}, {14, 12} };
+const std::string DIFFICULTY_STRINGS[] = {"10x8", "12x10", "14x12"};
+const SDL_Color DIFFICULTY_COLORS[] = {
+    {0x00,0x80,0x10,0xFF},
+    {0xF0,0x80,0x00,0xFF},
+    {0xA0,0x30,0x00,0xFF},
+};
+
 
 
 Tile::Tile(Texture *tex) : Button(tex) {
@@ -42,7 +51,7 @@ void Tile::playFlagAnim() {
     if (animState.active == TileAnim::FLAG) return;
 
     overlay = nullptr;
-    //background = &backgrounds[TTEX_HIDDEN];
+    background = &backgrounds[TTEX_HIDDEN];
 
     animState.start(TileAnim::FLAG, new FlagAnim(&overlays[ICON_FLAG], {x, y}, flagged),
         [&overlay=overlay, overlays=overlays, &flagged=flagged] () {
@@ -54,11 +63,13 @@ void Tile::playFlagAnim() {
 void Tile::flag() {
     setFlagged(true);
     playFlagAnim();
+    game->updateFlagCount();
 }
 
 void Tile::unflag() {
     setFlagged(false);
     playFlagAnim();
+    game->updateFlagCount();
 }
 
 void Tile::mouseEnter() {
@@ -94,11 +105,9 @@ void Tile::flip(bool recurse, Uint32 delay) {
     if (isMine()) {
         overlay = nullptr;
 
-        animState.start(TileAnim::REVEALMINE, new MineRevealAnim({x,y}, TILE_SIZE), [this](){
-                overlay = &overlays[ICON_MINE];
-        }, delay);
-
+        animState.start(TileAnim::REVEALMINE, new MineRevealAnim({x,y}, TILE_SIZE), [](){}, delay);
         animState.onstart = [this](){
+            overlay = &overlays[ICON_MINE];
             background = &backgrounds[TTEX_BLANK_SQUARE];
         };
     }
@@ -132,6 +141,9 @@ void Tile::playUncoverAnim(Uint32 delay) {
 }
 
 void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals) const {
+    //printf("row: %d ;; col: %d\n", row, col);
+    //printf("rows: %d ;; cols: %d\n\n", game->rows, game->cols);
+    fflush(stdout);
     const int left = col - 1;
     const int right = col + 1;
     const int below = row + 1;
@@ -140,7 +152,7 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
     const bool spaceLeft = left >= 0;
     const bool spaceRight = right < game->cols;
     const bool spaceAbove = above >= 0;
-    const bool spaceBelow = below < game->cols;
+    const bool spaceBelow = below < game->rows;
 
     auto& board = game->board;
 
@@ -158,24 +170,35 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
 }
 
 void Tile::render() {
-    if (background) {
-        background->render(x, y);
-    }
-    if (overlay) {
+    // Should always have a background
+    SDL_assert(background != nullptr);
+    background->render(x, y);
+
+    if (overlay != nullptr) {
         overlay->render(x, y);
     }
 }
 
-void Game::OnStart() {
+void Game::updateFlagCount() {
+    int flagCount = 0;
+    for (auto& row : board) for (auto& tile : row) {
+        flagCount += tile.isFlagged();
+    }
+
+    flagCounter.setString(std::to_string(flagCount)
+                        + "/"
+                        + std::to_string(mineCount)
+                        + " flags");
+}
+
+TextButton& Game::activeRestartButton() {
+    return (state & GameState::OVER) ? playAgainBtn : restartBtn;
 }
 
 void Game::OnUpdate(double dt) {
-    int screen_width;
-    SDL_GetWindowSize(window, &screen_width, nullptr);
+    int screen_width, screen_height;
+    SDL_GetWindowSize(window, &screen_width, &screen_height);
 
-    /** textures.title **/
-    int x_title = screen_width / 2 - textures.title.getWidth() / 2; 
-    textures.title.render(x_title, TITLE_SPACE_ABOVE);
 
     for (auto& row : board) for (Tile& tile : row) {
         tile.OnUpdate(dt);
@@ -183,72 +206,105 @@ void Game::OnUpdate(double dt) {
 
     animState.update(dt);
 
-    if (state & GameState::OVER) {
-        playAgainBtn.render();
+    activeRestartButton().render();
+
+    title.render();
+
+    flagCounter.render();
+
+    for (auto& btn : difficultyBtns) {
+        btn.render();
     }
-}
 
-Game::Game(int rows, int cols) : rows(rows), cols(cols) {
-    window = nullptr;
-    renderer = nullptr;
-    mainFont = nullptr;
-    currentHover = nullptr;
-    board.resize(rows, std::vector<Tile>(cols));
-    state = GameState::READY;
-
-    rng.seed(std::random_device{}());
-
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
-            Tile& tile = board[row][col];
-            tile.row = row;
-            tile.col = col;
-            tile.setHidden(true);
-            tile.setGame(this);
-        }
-    }
 }
 
 Game::~Game() {
     TTF_CloseFont(mainFont);
-    textures.title.free();
+}
 
+Game::Game(int rows, int cols) : rows(rows), cols(cols) {
+    mainFont = nullptr;
+    currentHover = nullptr;
+    state = GameState::READY;
+    rng.seed(std::random_device{}());
+
+    board.resize(rows, std::vector<Tile>(cols));
+}
+
+void Game::OnStart() {
+    ready();
+}
+
+// Called on both initial start and restart
+void Game::ready() {
+    mineCount = rows * cols * PERCENT_MINES;
+    animState.kill();
+
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            Tile &tile = board[row][col];
+            tile.row = row;
+            tile.col = col;
+            tile.setGame(this);
+            tile.reset();
+        }
+    }
+
+    positionItems();
+
+    updateFlagCount();
+
+    state = GameState::READY;
+}
+
+void Game::resizeBoard() {
+    // Resize 2d vector
+    board.resize(rows);
+    for (auto& row : board) {
+        row.resize(cols);
+    }
+
+    restartGame();
 }
 
 void Game::restartGame() {
-    state = GameState::READY;
-    animState.kill();
-    for (auto& row:board) for (auto& tile : row) {
-        tile.reset();
-    }
+    ready();
 }
 
 void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
-    if (state & GameState::OVER) {
-        if (e.button == SDL_BUTTON_LEFT && playAgainBtn.isMouseOver(e.x, e.y)) {
-            restartGame();
-        }
-        return;
-    }
-    if (currentHover == nullptr) return;
-
-    if (e.button == SDL_BUTTON_LEFT) {
-        if (currentHover->isHidden() && currentHover->isUnflagged()) {
-            if (state & GameState::STARTED) {
-                currentHover->flip();
-                onRevealTile(*currentHover);
+    if (currentHover) {
+        // Tile is hovered over
+        if (e.button == SDL_BUTTON_LEFT) {
+            if (currentHover->isHidden() && currentHover->isUnflagged()) {
+                if (state & GameState::STARTED) {
+                    currentHover->flip();
+                    onRevealTile(*currentHover);
+                } else {
+                    // Build starting area
+                    generateStartingArea(*currentHover);
+                    state |= GameState::STARTED;
+                }
+            }
+        } else if (e.button == SDL_BUTTON_RIGHT && currentHover->isHidden()) {
+            // Flag tile
+            if (currentHover->isUnflagged()) {
+                currentHover->flag();
             } else {
-                // Build starting area
-                generateStartingArea(*currentHover);
-                state |= GameState::STARTED;
+                currentHover->unflag();
             }
         }
-    } else if (e.button == SDL_BUTTON_RIGHT && currentHover->isHidden()) {
-        // Flag tile
-        if (currentHover->isUnflagged()) {
-            currentHover->flag();
-        } else {
-            currentHover->unflag();
+    }
+    else if (e.button == SDL_BUTTON_LEFT) {
+        if (activeRestartButton().isMouseOver(e.x, e.y)) {
+            return restartGame();
+        }
+        for (size_t i = 0; i < difficultyBtns.size(); ++i) {
+            if (difficultyBtns[i].isMouseOver(e.x, e.y)) {
+                rows = SIZES[i].rows;
+                cols = SIZES[i].cols;
+                resizeBoard();
+                return;
+            }
         }
     }
 
@@ -267,7 +323,7 @@ void Game::onLost(Tile& mine) {
     mine.red();
 
     animState.start(GameAnims::EXPLODE,
-                    new DetonationAnim(rng, {mine.x, mine.y}, &textures.detonationParticle),
+                    new DetonationAnim(rng, {mine.x, mine.y}, TILE_SIZE),
                    [this](){
         for (auto& row: board) for (Tile& tile : row) {
                 if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
@@ -318,6 +374,8 @@ void Game::onRevealTile(Tile& revealed) {
         printf("Game won!\n");
         state |= GameState::WON;
     }
+    else return;
+
 }
 
 void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
@@ -353,17 +411,22 @@ void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
 void Game::flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool diagonals) {
     if (count <= 0) return;
 
-    std::vector<Tile *> touching(8);
-    //std::vector<Tile *> out(touching.size());
+    std::vector<Tile *> touching(8, nullptr);
+
+    //DEBUG
+    for (auto tile : touching) SDL_assert(tile == nullptr);
+
     std::vector<Tile *> recurse(touching.size());
 
     root.foreach_touching_tile([&touching](Tile& tile) {
         touching.push_back(&tile);
     }, diagonals);
 
+    //std::sample is only in later versions of c++
     //std::sample(touching.begin(), touching.end(), std::back_inserter(out), touching.size(), rng);
+
     std::shuffle(touching.begin(), touching.end(), rng);
-    
+
     for (auto tile : touching) {
         if (tile == nullptr) continue;
         if (tile->isRevealed()) continue;
@@ -401,11 +464,13 @@ void Game::generateStartingArea(Tile& root) {
         tile->flip(true, delay);
         delay += 100;
     }
+
+    onRevealTile(root);
 }
 
 void Game::generateMines() {
-    int count = rows * cols * PERCENT_MINES;
     std::uniform_int_distribution<> randtile(0, rows * cols - 1);
+    int count = mineCount;
     while (count > 0) {
         int n = randtile(rng);
         int row = n / cols;
@@ -417,6 +482,8 @@ void Game::generateMines() {
             --count;
         }
     }
+
+    updateFlagCount();
 }
 
 std::string TILE_FILES[] = {
@@ -467,52 +534,112 @@ void Tile::loadMedia() {
 }
 
 void Game::loadMedia(SDL_Window *win) {
-    // Initialize member variables
     window = win;
-    renderer = SDL_GetRenderer(win);
-
-    int screen_width;
-    SDL_GetWindowSize(window, &screen_width, nullptr);
-
     /** Fonts **/
     mainFont = TTF_OpenFont("fonts/Arbutus-Regular.ttf", TITLE_FONT_SIZE);
     if (mainFont == nullptr) {
         throw std::runtime_error("Failed to load font! SDL_ttf error: " + std::string(TTF_GetError()));
     }
 
-    { /** Title texture **/
-        SDL_Color titleColor = { 0, 0, 0, 0 };
-        textures.title.loadText(mainFont, "Minesweeper", titleColor);
-    }
+    title.setString("Minesweeper");
+    title.setColor(0x00, 0x00, 0x00, 0xFF);
+    title.setFont(mainFont);
+    title.load();
+
+    updateFlagCount();
+    flagCounter.setColor(0xA0, 0x00, 0x00, 0xFF);
+    flagCounter.setFont(mainFont);
+    flagCounter.setScale(0.4);
+    flagCounter.load();
 
     Tile::loadMedia();
 
-    int top = TITLE_SPACE_ABOVE + textures.title.getHeight() + TITLE_SPACE_BELOW;
-    { /** Tile buttons **/
-        int left = (screen_width - cols*TILE_SIZE) / 2;
+    restartBtn.text.setFont(mainFont);
+    restartBtn.text.setColor(0xFF, 0x10, 0x00);
+    restartBtn.text.setString("Restart!");
+    restartBtn.setScale(0.5);
+    restartBtn.load();
 
-        for (int row = 0; row < rows; ++row) {
-            for (int col = 0; col < cols; ++col) {
-                Tile &tile = board[row][col];
-                tile.x = left + col * TILE_SIZE;
-                tile.y = top + row * TILE_SIZE;
-                tile.reset();
-            }
+    playAgainBtn.text.setFont(mainFont);
+    playAgainBtn.text.setColor(0x00, 0xC0, 0x00);
+    playAgainBtn.text.setString("Play again?");
+    playAgainBtn.setScale(0.5);
+    playAgainBtn.load();
+
+    {
+
+        const int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
+        difficultyBtns.resize(NUMBTNS);
+
+        for (int i = 0; i < NUMBTNS; ++i) {
+            auto& btn = difficultyBtns[i];
+            btn.text.setFont(mainFont);
+            btn.text.setColor(DIFFICULTY_COLORS[i].r, DIFFICULTY_COLORS[i].g, DIFFICULTY_COLORS[i].b);
+            btn.text.setString(DIFFICULTY_STRINGS[i]);
+            btn.text.load();
+            btn.setScale(0.4);
+        }
+
+    }
+}
+
+void Game::positionItems() {
+    int screen_width;
+    SDL_GetWindowSize(window, &screen_width, nullptr);
+
+    int y = 0;
+
+    // Title
+    y += TITLE_SPACE_ABOVE;
+    title.x = (screen_width - title.getWidth()) / 2; 
+    title.y = y;
+    y += title.getHeight() + 20;
+
+    // Flag count text
+    flagCounter.x = (screen_width - flagCounter.getWidth()) / 2;
+    flagCounter.y = y;
+    y += flagCounter.getHeight() + 20;
+
+    // Tiles
+    int x = (screen_width - cols*TILE_SIZE) / 2;
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            board[row][col].x = x + col * TILE_SIZE;
+            board[row][col].y = y + row * TILE_SIZE;
         }
     }
+    y += rows * TILE_SIZE;
 
-    std::string f = "images/detonationParticle.png";
-    textures.detonationParticle.loadFile(f, 32, 32);
+    // Play again and restart buttons
+    y += TILE_SIZE;
+    restartBtn.text.setFont(mainFont);
+    restartBtn.text.setColor(0xFF, 0x10, 0x00);
+    restartBtn.text.setString("Restart!");
+    restartBtn.setScale(0.5);
+    restartBtn.load();
+    restartBtn.setCenterX(screen_width / 2);
+    restartBtn.setY(y);
 
-    { /** Play Again Button **/
-        playAgainBtn.setColor(0x00, 0xC0, 0x00);
-        playAgainBtn.setFont(mainFont);
-        playAgainBtn.setString("Play again?");
-        playAgainBtn.scale = 0.5;
-        playAgainBtn.load();
-        playAgainBtn.setCenterPos(screen_width / 2, rows * TILE_SIZE + top + 50);
-        playAgainBtn.x = (screen_width - playAgainBtn.getWidth()) / 2;
-    }
+    playAgainBtn.text.setFont(mainFont);
+    playAgainBtn.text.setColor(0x00, 0xC0, 0x00);
+    playAgainBtn.text.setString("Play again?");
+    playAgainBtn.setScale(0.5);
+    playAgainBtn.load();
+    playAgainBtn.setCenterX(screen_width / 2);
+    playAgainBtn.setY(y);
+
+    y += playAgainBtn.getHeight() + 20;
+
+    for (auto& btn : difficultyBtns) btn.setY(y);
+
+
+    difficultyBtns[1].setCenterX(screen_width / 2);
+
+    int midWidth = difficultyBtns[1].getWidth();
+
+    difficultyBtns[0].setCenterX((screen_width - midWidth - difficultyBtns[0].getWidth()) / 2 - 10);
+
+    difficultyBtns[2].setCenterX((screen_width + midWidth + difficultyBtns[0].getWidth()) / 2 + 10);
 }
 
 bool Game::hasWon() {

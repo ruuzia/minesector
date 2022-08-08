@@ -3,6 +3,7 @@
 
 #include "texture.h"
 #include <functional>
+#include "text.h"
 
 
 class Button {
@@ -17,7 +18,7 @@ public:
 
     bool isMouseOver(int mouseX, int mouseY) const;
 
-    std::function<void()> onclick();
+    std::function<void()> onclick;
 
     virtual void render()  {
         background->render(x, y);
@@ -34,38 +35,50 @@ private:
 
 class TextButton : public Button {
 public:
-    TextButton();
+    TextButton(TTF_Font *font = nullptr);
     ~TextButton();
 
     void render();
     void load();
 
-    void setFont(TTF_Font *font_) {
-        font = font_;
-    }
-    void setString(const char* string_) {
-        string = string_;
-    }
-    void setColor(Uint8 r, Uint8 g, Uint8 b) {
-        color.r = r;
-        color.g = g;
-        color.b = b;
-    }
-
     int getWidth() const;
     int getHeight() const;
 
-    void setCenterPos(int x_, int y_) {
-        x = x_ - text.getWidth() / 2 - borderWidth;
-        y = y_ - text.getHeight() / 2 - borderWidth;
+    void setY(int y_) {
+        y = y_;
+        text.y = y_ + borderWidth;
+    }
+    void setX(int x_) {
+        x = x_;
+        text.x = x_ + borderWidth;
     }
 
-    double scale;
+    void setCenterY(int y_) {
+        setY(y_ - (text.getHeight() / 2) - borderWidth);
+    }
+
+    void setCenterX(int x_) {
+        setX(x_ - (text.getWidth() / 2) - borderWidth);
+    }
+
+    void setCenterPos(int x_, int y_) {
+        setCenterX(x_);
+        setCenterY(y_);
+    }
+
+    void setPos(int x_, int y_) {
+        setX(x_);
+        setY(y_);
+    }
+
+    Text text;
+
+    void setScale(double scale_) {
+        scale = scale_;
+        text.setScale(scale);
+    }
 private:
-    Texture text;
-    TTF_Font *font;
-    const char* string;
-    SDL_Color color;
+    double scale;
     SDL_Color bgcolor;
     int borderWidth;
 };
