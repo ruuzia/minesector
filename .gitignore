@@ -11,3 +11,7 @@ CMakeCache.txt
 compile_commands.json
 cmake_install.cmake
 Makefile
+Session.vim
+Sessionx.vim
+cmake-build-*
+.idea/*
