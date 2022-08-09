@@ -107,7 +107,8 @@ enum GameState {
 
 class Game {
 public:
-    Game(int rows = 12, int cols = 18);
+    Game(int rows, int cols);
+    Game();
     ~Game();
 
     int state;
@@ -137,6 +138,7 @@ public:
     int mineCount;
 
 private:
+    int screen_width, screen_height;
     Text title;
     Text flagCounter;
     TextButton restartBtn;
@@ -153,7 +155,7 @@ private:
     bool hasWon();
     void generateStartingArea(Tile& tile);
     void generateMines();
-    void flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool diagonals = true);
+    void flipTiles(Tile& root, int count, std::vector<Tile*>& toreveal);
 
     void onRevealTile(Tile& tile);
 
