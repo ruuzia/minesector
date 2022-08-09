@@ -25,6 +25,10 @@ public:
 
         SDL_DestroyWindow(window);
         window = nullptr;
+
+        IMG_Quit();
+        TTF_Quit();
+        SDL_Quit();
     }
 
     void init();
@@ -32,6 +36,10 @@ public:
 };
 
 void SDL::init() {
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        throw std::runtime_error("SDL could not initialize! SDL Error: " + std::string(SDL_GetError()));
+    }
+
     window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (window == nullptr) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
 
@@ -40,6 +48,8 @@ void SDL::init() {
         throw std::runtime_error("Unable to create accelerated renderer. SDL Error: " + std::string(SDL_GetError()));
 
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+
 
     int imgFlags = IMG_INIT_PNG;
     if (!(IMG_Init(imgFlags) & imgFlags))
@@ -64,10 +74,16 @@ static bool Update(Game &game, double dt) {
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
         case SDL_QUIT:
-            return true;
+            return false;
 
         case SDL_KEYDOWN:
-            if (e.key.keysym.sym == SDLK_t) {
+            // Force quit with Alt + F4
+            //printf("Key: %s\n", SDL_GetKeyName(e.key.keysym.sym));
+            if (e.key.keysym.sym == SDLK_F4 && (e.key.keysym.mod & KMOD_ALT)) {
+                printf("Force quit.\n");
+                return false;
+            }
+            else if (e.key.keysym.sym == SDLK_t) {
                 printf("dt: %f\n", dt);
             }
             break;
@@ -89,15 +105,18 @@ static bool Update(Game &game, double dt) {
     game.OnUpdate(dt);
     SDL_RenderPresent(renderer);
     
-    return false;
+    return true;
 }
+
+const int FPS = 60;
+const int TICKS_PER_FRAME = 1000 / FPS;
 
 int main(int argc, char **argv) {
     (void)argc; (void) argv;
 
     SDL sdl;
 
-    Game game(12, 12);
+    Game game;
 
 
     try {
@@ -116,15 +135,19 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    bool quit = false;
+    bool running = true;
     Uint32 lastFrame = SDL_GetTicks();
     game.OnStart();
 
-    while (!quit) {
+    while (running) {
         Uint32 current = SDL_GetTicks();
         double dt = (current - lastFrame) / 1000.0;
         lastFrame = current;
-        quit = Update(game, dt);
+        running = Update(game, dt);
+        const int updateTime = SDL_GetTicks() - lastFrame;
+        if (updateTime < TICKS_PER_FRAME) {
+            SDL_Delay(TICKS_PER_FRAME - updateTime);
+        }
     }
 
     return 0;
