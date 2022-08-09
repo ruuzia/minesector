@@ -1,7 +1,7 @@
 #include "common.h"
 #include "game.h"
 #include <string>
-
+#include <set>
 #include <algorithm>
 
 const int TITLE_FONT_SIZE = 40;
@@ -9,14 +9,13 @@ const int TITLE_SPACE_ABOVE = 15;
 const int TILE_SIZE = 32;
 const float PERCENT_MINES = 0.20;
 
-const struct {int cols; int rows; } SIZES[] = { {3, 3}, {12, 10}, {14, 12} };
-const std::string DIFFICULTY_STRINGS[] = {"10x8", "12x10", "14x12"};
+const struct {int cols; int rows; } SIZES[] = { {10, 8}, {12, 10}, {14, 12} };
+const std::string DIFFICULTY_STRINGS[] = {"Easy", "Medium", "Hard"};
 const SDL_Color DIFFICULTY_COLORS[] = {
     {0x00,0x80,0x10,0xFF},
     {0xF0,0x80,0x00,0xFF},
     {0xA0,0x30,0x00,0xFF},
 };
-
 
 
 Tile::Tile(Texture *tex) : Button(tex) {
@@ -189,6 +188,9 @@ void Game::updateFlagCount() {
                         + "/"
                         + std::to_string(mineCount)
                         + " flags");
+
+    flagCounter.load();
+    flagCounter.x = (screen_width - flagCounter.getWidth()) / 2;
 }
 
 TextButton& Game::activeRestartButton() {
@@ -196,10 +198,6 @@ TextButton& Game::activeRestartButton() {
 }
 
 void Game::OnUpdate(double dt) {
-    int screen_width, screen_height;
-    SDL_GetWindowSize(window, &screen_width, &screen_height);
-
-
     for (auto& row : board) for (Tile& tile : row) {
         tile.OnUpdate(dt);
     }
@@ -221,6 +219,8 @@ void Game::OnUpdate(double dt) {
 Game::~Game() {
     TTF_CloseFont(mainFont);
 }
+
+Game::Game() : Game(SIZES[1].rows, SIZES[1].cols) {}
 
 Game::Game(int rows, int cols) : rows(rows), cols(cols) {
     mainFont = nullptr;
@@ -408,42 +408,49 @@ void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
     }
 }
 
-void Game::flipTiles(Tile& root, int& count, std::vector<Tile*>& toreveal, bool diagonals) {
-    if (count <= 0) return;
-
-    std::vector<Tile *> touching(8, nullptr);
-
-    //DEBUG
-    for (auto tile : touching) SDL_assert(tile == nullptr);
-
-    std::vector<Tile *> recurse(touching.size());
-
-    root.foreach_touching_tile([&touching](Tile& tile) {
-        touching.push_back(&tile);
+static void pushHiddenNeighbors(Tile& tile, std::vector<Tile*>& tiles, bool diagonals) {
+    tile.foreach_touching_tile([&tiles](Tile& neighbor) {
+        for (auto tile : tiles) if (tile == &neighbor) return;
+        if (neighbor.isHidden()) {
+            tiles.push_back(&neighbor);
+        }
     }, diagonals);
+}
 
-    //std::sample is only in later versions of c++
-    //std::sample(touching.begin(), touching.end(), std::back_inserter(out), touching.size(), rng);
-
-    std::shuffle(touching.begin(), touching.end(), rng);
-
-    for (auto tile : touching) {
-        if (tile == nullptr) continue;
-        if (tile->isRevealed()) continue;
-
-        count -= 1;
-
-        tile->setHidden(false);
-        toreveal.push_back(tile);
-        recurse.push_back(tile);
-    }
+void Game::flipTiles(Tile& root, int count, std::vector<Tile*>& revealqueue) {
     if (count <= 0) return;
 
-    for (auto tile : recurse) {
-        if (tile == nullptr) continue;
-        flipTiles(*tile, count, toreveal, false);
-    }
+    std::vector<Tile*> tiles;
+    std::vector<Tile*> tospread;
 
+    // Start by adding all neighbors, including diagonals
+    pushHiddenNeighbors(root, tiles, true);
+
+    while (count > 0 && !tiles.empty()) {
+        // Select up to 8 random neighbors
+        std::shuffle(tiles.begin(), tiles.end(), rng);
+        int num = std::min(int(std::min(tiles.size(), 8UL)), count);
+
+        for (int i = 0; i < num; ++i) {
+            count -= 1;
+            // Force set hidden to not start reveal animation
+            tiles[i]->setHidden(false);
+
+            // Add to queue for delayed reveal animtion
+            revealqueue.push_back(tiles[i]);
+
+            // Add for hidden neighbors to be in next potential layer
+            tospread.push_back(tiles[i]);
+        }
+
+        tiles.clear();
+
+        // Build next layer
+        for (auto tile : tospread) {
+            pushHiddenNeighbors(*tile, tiles, false);
+        }
+        tospread.clear();
+    }
 }
 
 void Game::generateStartingArea(Tile& root) {
@@ -455,8 +462,7 @@ void Game::generateStartingArea(Tile& root) {
     root.setMine(false);
 
     int count = 20;
-    int picknum = 4;
-    flipTiles(root, count, toreveal, picknum);
+    flipTiles(root, count, toreveal);
 
     generateMines();
     Uint32 delay = 0;
@@ -469,18 +475,40 @@ void Game::generateStartingArea(Tile& root) {
 }
 
 void Game::generateMines() {
-    std::uniform_int_distribution<> randtile(0, rows * cols - 1);
-    int count = mineCount;
-    while (count > 0) {
-        int n = randtile(rng);
-        int row = n / cols;
-        int col = n % cols;
+    std::uniform_int_distribution<> randrow(0, rows);
+    std::uniform_int_distribution<> randcol(0, cols);
+    for (int i = 0; i < mineCount; ++i) {
+        int rowPicked = randrow(rng);
+        int colPicked = randcol(rng);
 
-        Tile& tile = board[row][col];
-        if (tile.isHidden() && tile.isSafe()) {
-            tile.setMine(true);
-            --count;
+        // Find first available tile
+        Tile* tile = nullptr;
+        for (int _r = 0; _r < rows; ++_r)
+        for (int _c = 0; _c < cols; ++_c) {
+            // We want to start from the selected position and work our way around
+            // as if it's a circular array
+            int r = (_r + rowPicked) % rows;
+            int c = (_c + colPicked) % cols;
+
+            if (board[r][c].isHidden() && board[r][c].isSafe()) {
+                tile = &board[r][c];
+
+                // Escape from nested loop
+                goto found;
+            }
         }
+
+        // NO FREE TILES:
+        {
+            mineCount = i;
+            break;
+        }
+
+
+    found:
+        // Found a free tile
+        tile->setMine(true);
+
     }
 
     updateFlagCount();
@@ -546,11 +574,10 @@ void Game::loadMedia(SDL_Window *win) {
     title.setFont(mainFont);
     title.load();
 
-    updateFlagCount();
     flagCounter.setColor(0xA0, 0x00, 0x00, 0xFF);
     flagCounter.setFont(mainFont);
     flagCounter.setScale(0.4);
-    flagCounter.load();
+    updateFlagCount();
 
     Tile::loadMedia();
 
@@ -584,8 +611,7 @@ void Game::loadMedia(SDL_Window *win) {
 }
 
 void Game::positionItems() {
-    int screen_width;
-    SDL_GetWindowSize(window, &screen_width, nullptr);
+    SDL_GetWindowSize(window, &screen_width, &screen_height);
 
     int y = 0;
 
@@ -639,7 +665,7 @@ void Game::positionItems() {
 
     difficultyBtns[0].setCenterX((screen_width - midWidth - difficultyBtns[0].getWidth()) / 2 - 10);
 
-    difficultyBtns[2].setCenterX((screen_width + midWidth + difficultyBtns[0].getWidth()) / 2 + 10);
+    difficultyBtns[2].setCenterX((screen_width + midWidth + difficultyBtns[2].getWidth()) / 2 + 10);
 }
 
 bool Game::hasWon() {
