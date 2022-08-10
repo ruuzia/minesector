@@ -557,7 +557,7 @@ void Game::flipTiles(Tile& root, int count, std::vector<Tile*>& revealqueue) {
     while (count > 0 && !tiles.empty()) {
         // Select up to 8 random neighbors
         std::shuffle(tiles.begin(), tiles.end(), rng);
-        int num = std::min(int(std::min(tiles.size(), 8UL)), count);
+        int num = std::min(int(std::min((long unsigned)tiles.size(), 8UL)), count);
 
         for (int i = 0; i < num; ++i) {
             count -= 1;
