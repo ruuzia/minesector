@@ -5,8 +5,8 @@ project (sdlminesweeper)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:\\mingw_dev\\lib")
 
 find_package(SDL2 REQUIRED)
-find_package(SDL2_ttf REQUIRED)
-find_package(SDL2_image REQUIRED)
+find_package(SDL2_ttf)
+find_package(SDL2_image)
 
 set (CMAKE_CXX_STANDARD 17)
 
