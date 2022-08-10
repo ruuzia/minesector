@@ -356,7 +356,6 @@ void Game::load() {
 
     SDL_RWops* in = SDL_RWFromFile(file.c_str(), "r+b");
     if (in == NULL) {
-        printf("No save file found\n");
         return;
     }
     for (char *c = Save::HEADER; *c != '\0'; ++c) {
@@ -365,21 +364,18 @@ void Game::load() {
             printf("Invalid or corrupted save file! Missing header.\n");
         }
     }
-    printf("%s\n", Save::HEADER);
     Uint8 data;
     if ((data = SDL_ReadU8(in)) != 'r') {
         printf("Missing rows data :: expected r (%d) got (%d)\n", 'r', data);
         return;
     }
     rows = SDL_ReadU8(in);
-    printf("Rows: %d\n", rows);
 
     if (SDL_ReadU8(in) != 'c') {
         printf("Missing cols data\n");
         return;
     }
     cols = SDL_ReadU8(in);
-    printf("Cols: %d\n", cols);
 
     if (SDL_ReadU8(in) != 'g') {
         printf("Missing game state\n");
