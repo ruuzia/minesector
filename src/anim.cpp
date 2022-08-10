@@ -151,9 +151,9 @@ DetonationParticle::DetonationParticle(std::mt19937& rng, int x, int y)
 {
     const float MAX_SPEED = 150;
     born = SDL_GetTicks() * 0.001;
-    dx = std::uniform_real_distribution{-MAX_SPEED, MAX_SPEED} (rng);
-    dy = std::uniform_real_distribution(-MAX_SPEED, MAX_SPEED) (rng);
-    lifetime = std::uniform_real_distribution(1.0, 2.0) (rng);
+    dx = std::uniform_real_distribution<>{-MAX_SPEED, MAX_SPEED} (rng);
+    dy = std::uniform_real_distribution<>(-MAX_SPEED, MAX_SPEED) (rng);
+    lifetime = std::uniform_real_distribution<>(1.0, 2.0) (rng);
 
     color.g = std::uniform_real_distribution<>(0.0, 0.6) (rng);
 }
