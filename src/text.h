@@ -5,10 +5,11 @@
 #include <SDL.h>
 #include <string>
 #include "texture.h"
+#include "color.h"
 
 class Text {
 public:
-    Text(TTF_Font *font = nullptr, std::string string_={}, SDL_Color color_ = {0,0,0,0});
+    Text(TTF_Font *font = nullptr, std::string string_={});
     ~Text() = default;
 
     void render();
@@ -22,13 +23,13 @@ public:
         string = string_;
         loaded = false;
     }
-    void setColor(Uint8 r, Uint8 g, Uint8 b, Uint8 a = 0xFF) {
-        color.r = r;
-        color.g = g;
-        color.b = b;
-        color.a = a;
+    void setColor(const Color& color_) {
+        color.set(color_);
         loaded = false;
     }
+    //void setColor(const Color&& color_) {
+    //    setColor(color_);
+    //}
     void setScale(double scale_) {
         scale = scale_;
         // Update texture if loaded
@@ -43,7 +44,7 @@ public:
     bool loaded = false;
     TTF_Font *font;
     std::string string;
-    SDL_Color color;
+    Color color;
     float scale;
 
 private:

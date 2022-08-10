@@ -15,3 +15,4 @@ Session.vim
 Sessionx.vim
 cmake-build-*
 .idea/*
+*.bin

@@ -78,6 +78,10 @@ public:
     void foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals = true) const;
     int countTouchingMines() const;
 
+    void forceUpdateTexture();
+    Uint8 save();
+    void load(Uint8 data);
+
     int row;
     int col;
     AnimState animState;
@@ -120,6 +124,8 @@ public:
 
     void OnUpdate(double dt);
     void OnStart();
+    void save();
+    void load();
 
     void onMouseButtonDown(SDL_MouseButtonEvent const &e);
     void onMouseButtonUp(SDL_MouseButtonEvent const &e);
@@ -161,6 +167,7 @@ private:
 
     SDL_Window *window;
 
+    std::vector<Uint8> tileDatas;
 
     // Font class?
     //

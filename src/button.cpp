@@ -1,4 +1,5 @@
 #include "button.h"
+#include "color.h"
 
 Button::Button(Texture *tex) : background(tex) {
 }
@@ -26,8 +27,8 @@ bool Button::isMouseOver(int mouseX, int mouseY) const {
 TextButton::TextButton(TTF_Font *font) : Button(), text(font) {
     scale = 1.0;
     borderWidth = 15;
-    text.setColor(0x00, 0x00, 0x00);
-    bgcolor = {0xF0, 0xF0, 0xF0, 0xE0};
+    text.setColor(Color(0x000000));
+    bgcolor = {HEX(0xF0F0F0), 0xE0};
 }
 
 int TextButton::getWidth() const {

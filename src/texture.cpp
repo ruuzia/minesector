@@ -21,29 +21,14 @@ Texture::~Texture() {
 }
 
 void Texture::render(int x, int y, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) const {
-    const SDL_Rect dstrect = {
-        .x = x,
-        .y = y,
-        .w = width,
-        .h = height,
-    };
+    const SDL_Rect dstrect = { x, y, width, height };
     SDL_RenderCopyEx(renderer, texture, clip, &dstrect, angle, center, flip);
 }
 
 void Texture::renderPart(int x, int y, const SDL_Rect *rect) const {
-    const SDL_Rect srcrect = {
-        .x = rect->x,
-        .y = rect->y,
-        .w = rect->w * (int) ((float)imgWidth / (float)width),
-        .h = rect->h * (int) ((float)imgHeight / (float)height),
-    };
+    const SDL_Rect srcrect = { rect->x, rect->y, rect->w * (int) ((float)imgWidth / (float)width), rect->h * (int) ((float)imgHeight / (float)height) };
 
-    const SDL_Rect dstrect = {
-        .x = x + rect->x,
-        .y = y + rect->y,
-        .w = rect->w,
-        .h = rect->h,
-    };
+    const SDL_Rect dstrect = { x + rect->x, y + rect->y, rect->w, rect->h };
 
     SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
 }

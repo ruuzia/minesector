@@ -1,7 +1,7 @@
 #include "common.h"
 #include "game.h"
 #include <string>
-#include <set>
+#include "color.h"
 #include <algorithm>
 
 const int TITLE_FONT_SIZE = 40;
@@ -11,10 +11,10 @@ const float PERCENT_MINES = 0.20;
 
 const struct {int cols; int rows; } SIZES[] = { {10, 8}, {12, 10}, {14, 12} };
 const std::string DIFFICULTY_STRINGS[] = {"Easy", "Medium", "Hard"};
-const SDL_Color DIFFICULTY_COLORS[] = {
-    {0x00,0x80,0x10,0xFF},
-    {0xF0,0x80,0x00,0xFF},
-    {0xA0,0x30,0x00,0xFF},
+const Color DIFFICULTY_COLORS[] = {
+    { 0x008010 },
+    { 0xF08000 },
+    { 0xA03000 },
 };
 
 
@@ -27,9 +27,53 @@ Tile::Tile(Texture *tex) : Button(tex) {
     isRed = false;
 }
 
+enum TileSaveData {
+    HIDDEN = 1,
+    MINE = 2,
+    FLAGGED = 4,
+    RED = 8,
+
+    DEFAULT = HIDDEN,
+};
+
+Uint8 Tile::save() {
+    Uint8 data = 0;
+    if (isHidden())  data |= TileSaveData::HIDDEN;
+    if (isMine())    data |= TileSaveData::MINE;
+    if (isFlagged()) data |= TileSaveData::FLAGGED;
+    if (isRed)       data |= TileSaveData::RED;
+    return data;
+}
+
+void Tile::load(Uint8 data) {
+    setMine   (data & TileSaveData::MINE);
+    setHidden (data & TileSaveData::HIDDEN);
+    setFlagged(data & TileSaveData::FLAGGED);
+    isRed = data & TileSaveData::RED;
+}
+
+// No animations
+void Tile::forceUpdateTexture() {
+    if (isHidden()) {
+        background = &backgrounds[TTEX_HIDDEN];
+        if (isFlagged()) {
+            overlay = &overlays[ICON_FLAG];
+        }
+    }
+    else {
+        background = &backgrounds[isRed ? TTEX_RED_SQUARE : TTEX_BLANK_SQUARE];
+        if (isMine()) {
+            overlay = &overlays[ICON_MINE];
+        }
+        else {
+            overlay = &numbers[countTouchingMines()];
+        }
+    }
+    animState.kill();
+}
+
 int Tile::countTouchingMines() const {
     int nearbyMines = 0;
-
     foreach_touching_tile([&](Tile& tile) -> void {
         if (tile.isMine()) {
             nearbyMines += 1;
@@ -225,14 +269,28 @@ Game::Game() : Game(SIZES[1].rows, SIZES[1].cols) {}
 Game::Game(int rows, int cols) : rows(rows), cols(cols) {
     mainFont = nullptr;
     currentHover = nullptr;
-    state = GameState::READY;
     rng.seed(std::random_device{}());
-
-    board.resize(rows, std::vector<Tile>(cols));
 }
 
 void Game::OnStart() {
+    load();
+    int loadedState = state;
+
+    board.resize(rows, std::vector<Tile>(cols));
     ready();
+
+    if (!tileDatas.empty()) {
+        for (int r = 0; r < rows; ++r) for (int c = 0; c < cols; ++c) {
+            board[r][c].load(tileDatas[r*cols+c]);
+        }
+        for (auto &row : board) for (auto& tile : row) {
+            tile.forceUpdateTexture();
+        }
+        updateFlagCount();
+    }
+    if (loadedState) {
+        state = loadedState;
+    }
 }
 
 // Called on both initial start and restart
@@ -255,6 +313,76 @@ void Game::ready() {
     updateFlagCount();
 
     state = GameState::READY;
+}
+
+
+namespace Save {
+    char HEADER[] = "MINE ";
+    const char *FILE = "save/data.bin";
+    size_t DATA_BUFFER = 1028;
+}
+
+void Game::save() {
+    SDL_RWops* out = SDL_RWFromFile(Save::FILE, "w+b");
+    SDL_RWwrite(out, Save::HEADER, 1, sizeof(Save::HEADER) - 1);
+
+    SDL_WriteU8(out, 'r');
+    SDL_WriteU8(out, (Uint8)rows);
+    SDL_WriteU8(out, 'c');
+    SDL_WriteU8(out, (Uint8)cols);
+
+    SDL_WriteU8(out, 'g');
+    SDL_WriteU8(out, (Uint8)state);
+
+    for (auto& row : board) for (auto& tile : row) {
+        SDL_WriteU8(out, 't');
+        SDL_WriteU8(out, tile.save());
+    }
+
+    SDL_WriteU8(out, '\0');
+    SDL_RWclose(out);
+}
+
+void Game::load() {
+    SDL_RWops* in = SDL_RWFromFile(Save::FILE, "r+b");
+    if (in == NULL) {
+        printf("No save file found\n");
+        return;
+    }
+    for (char *c = Save::HEADER; *c != '\0'; ++c) {
+        Uint8 u8 = SDL_ReadU8(in);
+        if (u8 != *c) {
+            printf("Invalid or corrupted save file! Missing header.\n");
+        }
+    }
+    printf("%s\n", Save::HEADER);
+    Uint8 data;
+    if ((data = SDL_ReadU8(in)) != 'r') {
+        printf("Missing rows data :: expected r (%d) got (%d)\n", 'r', data);
+        return;
+    }
+    rows = SDL_ReadU8(in);
+    printf("Rows: %d\n", rows);
+
+    if (SDL_ReadU8(in) != 'c') {
+        printf("Missing cols data\n");
+        return;
+    }
+    cols = SDL_ReadU8(in);
+    printf("Cols: %d\n", cols);
+
+    if (SDL_ReadU8(in) != 'g') {
+        printf("Missing game state\n");
+        return;
+    }
+    state = SDL_ReadU8(in);
+
+    tileDatas.resize(rows*cols, TileSaveData::DEFAULT);
+    for (int i = 0; (data = SDL_ReadU8(in)) == 't'; i++) {
+        tileDatas[i] = SDL_ReadU8(in);
+    }
+
+    SDL_RWclose(in);
 }
 
 void Game::resizeBoard() {
@@ -570,11 +698,11 @@ void Game::loadMedia(SDL_Window *win) {
     }
 
     title.setString("Minesweeper");
-    title.setColor(0x00, 0x00, 0x00, 0xFF);
+    title.setColor(Color(0x000000));
     title.setFont(mainFont);
     title.load();
 
-    flagCounter.setColor(0xA0, 0x00, 0x00, 0xFF);
+    flagCounter.setColor(Color(0xA00000));
     flagCounter.setFont(mainFont);
     flagCounter.setScale(0.4);
     updateFlagCount();
@@ -582,13 +710,13 @@ void Game::loadMedia(SDL_Window *win) {
     Tile::loadMedia();
 
     restartBtn.text.setFont(mainFont);
-    restartBtn.text.setColor(0xFF, 0x10, 0x00);
+    restartBtn.text.setColor(Color(0xFF1000));
     restartBtn.text.setString("Restart!");
     restartBtn.setScale(0.5);
     restartBtn.load();
 
     playAgainBtn.text.setFont(mainFont);
-    playAgainBtn.text.setColor(0x00, 0xC0, 0x00);
+    playAgainBtn.text.setColor(Color(0x00C000));
     playAgainBtn.text.setString("Play again?");
     playAgainBtn.setScale(0.5);
     playAgainBtn.load();
@@ -601,7 +729,7 @@ void Game::loadMedia(SDL_Window *win) {
         for (int i = 0; i < NUMBTNS; ++i) {
             auto& btn = difficultyBtns[i];
             btn.text.setFont(mainFont);
-            btn.text.setColor(DIFFICULTY_COLORS[i].r, DIFFICULTY_COLORS[i].g, DIFFICULTY_COLORS[i].b);
+            btn.text.setColor(DIFFICULTY_COLORS[i]);
             btn.text.setString(DIFFICULTY_STRINGS[i]);
             btn.text.load();
             btn.setScale(0.4);
@@ -639,7 +767,7 @@ void Game::positionItems() {
     // Play again and restart buttons
     y += TILE_SIZE;
     restartBtn.text.setFont(mainFont);
-    restartBtn.text.setColor(0xFF, 0x10, 0x00);
+    restartBtn.text.setColor(Color(0xFF1000));
     restartBtn.text.setString("Restart!");
     restartBtn.setScale(0.5);
     restartBtn.load();
@@ -647,7 +775,7 @@ void Game::positionItems() {
     restartBtn.setY(y);
 
     playAgainBtn.text.setFont(mainFont);
-    playAgainBtn.text.setColor(0x00, 0xC0, 0x00);
+    playAgainBtn.text.setColor(Color(0x00C000));
     playAgainBtn.text.setString("Play again?");
     playAgainBtn.setScale(0.5);
     playAgainBtn.load();

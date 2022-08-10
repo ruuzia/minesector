@@ -2,6 +2,7 @@
 #define ANIM_H
 
 #include "texture.h"
+#include "color.h"
 #include <functional>
 #include <random>
 #include <memory>
@@ -105,13 +106,9 @@ private:
 
     float x;
     float y;
-    std::mt19937& rng;
     double born;
 
-    double colorAlpha;
-    double colorRed;
-    double colorGreen;
-    double colorBlue;
+    Color color { 0xFF0000 };
 
     static const double DELTA_ALPHA;
 };

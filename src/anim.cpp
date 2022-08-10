@@ -104,12 +104,11 @@ bool UncoverAnim::OnUpdate(double dt) {
 
     if (widthPercent < 0 || heightPercent < 0) return false;
 
-    SDL_Rect rect = {
-        .x = inverseX ? (int) (hidden->getWidth() * (1 - widthPercent)) : 0,
-        .y = inverseY ? (int) (hidden->getHeight() * (1 - heightPercent)) : 0,
-        .w = (int) (hidden->getWidth() * widthPercent),
-        .h = (int) (hidden->getHeight() * heightPercent),
-    };
+    SDL_Rect rect;
+    rect.x = inverseX ? int(hidden->getWidth() * (1 - widthPercent)) : 0;
+    rect.y = inverseY ? int(hidden->getHeight() * (1 - heightPercent)) : 0;
+    rect.w = int(hidden->getWidth() * widthPercent);
+    rect.h = int(hidden->getHeight() * heightPercent);
 
     hidden->renderPart(pos.x, pos.y, &rect);
 
@@ -148,7 +147,7 @@ bool DetonationAnim::OnUpdate(double dt) {
 }
 
 DetonationParticle::DetonationParticle(std::mt19937& rng, int x, int y)
-    : x(x), y(y), rng(rng)
+    : x(x), y(y)
 {
     const float MAX_SPEED = 150;
     born = SDL_GetTicks() * 0.001;
@@ -156,10 +155,7 @@ DetonationParticle::DetonationParticle(std::mt19937& rng, int x, int y)
     dy = std::uniform_real_distribution(-MAX_SPEED, MAX_SPEED) (rng);
     lifetime = std::uniform_real_distribution(1.0, 2.0) (rng);
 
-    colorAlpha = 1.0;
-    colorRed = 1.0;
-    colorGreen = std::uniform_real_distribution<>(0.0, 0.6) (rng);
-    colorBlue = 0.0;
+    color.g = std::uniform_real_distribution<>(0.0, 0.6) (rng);
 }
 
 
@@ -169,9 +165,9 @@ const double DetonationParticle::DELTA_ALPHA = -0.2;
 void DetonationParticle::render(double dt) {
     x += dx * dt;
     y += dy * dt;
-    colorAlpha += DELTA_ALPHA * dt;
+    color.a += DELTA_ALPHA * dt;
 
-    SDL_SetRenderDrawColor(renderer, (int)(0xFF*colorRed), (int)(0xFF*colorGreen), (int) (0xFF*colorBlue), (int) (0xFF*colorAlpha));
+    color.setToRender();
     SDL_Rect fillrect;
     fillrect.w = 12;
     fillrect.h = 12;

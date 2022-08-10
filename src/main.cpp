@@ -78,9 +78,12 @@ static bool Update(Game &game, double dt) {
 
         case SDL_KEYDOWN:
             // Force quit with Alt + F4
-            //printf("Key: %s\n", SDL_GetKeyName(e.key.keysym.sym));
             if (e.key.keysym.sym == SDLK_F4 && (e.key.keysym.mod & KMOD_ALT)) {
                 printf("Force quit.\n");
+                return false;
+            }
+            else if (e.key.keysym.sym == SDLK_q && (e.key.keysym.mod & KMOD_CTRL)) {
+                printf("Quit.\n");
                 return false;
             }
             else if (e.key.keysym.sym == SDLK_t) {
@@ -101,6 +104,16 @@ static bool Update(Game &game, double dt) {
             break;
         }
     }
+
+    /*
+    const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
+    if (currentKeyStates[SDL_SCANCODE_F4]
+        && (currentKeyStates[SDL_SCANCODE_LALT] || currentKeyStates[SDL_SCANCODE_RALT]))
+    {
+        printf("Force quit\n");
+        //return false;
+    }
+    */
 
     game.OnUpdate(dt);
     SDL_RenderPresent(renderer);
@@ -144,11 +157,16 @@ int main(int argc, char **argv) {
         double dt = (current - lastFrame) / 1000.0;
         lastFrame = current;
         running = Update(game, dt);
+
         const int updateTime = SDL_GetTicks() - lastFrame;
         if (updateTime < TICKS_PER_FRAME) {
             SDL_Delay(TICKS_PER_FRAME - updateTime);
         }
     }
 
+    game.save();
+
     return 0;
+
+
 }
