@@ -82,6 +82,7 @@ public:
     Uint8 save();
     void load(Uint8 data);
 
+
     int row;
     int col;
     AnimState animState;
@@ -142,6 +143,8 @@ public:
     void updateFlagCount();
 
     int mineCount;
+
+    char* saveDirectory;
 
 private:
     int screen_width, screen_height;

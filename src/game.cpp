@@ -262,6 +262,7 @@ void Game::OnUpdate(double dt) {
 
 Game::~Game() {
     TTF_CloseFont(mainFont);
+    SDL_free(saveDirectory);
 }
 
 Game::Game() : Game(SIZES[1].rows, SIZES[1].cols) {}
@@ -270,7 +271,13 @@ Game::Game(int rows, int cols) : rows(rows), cols(cols) {
     mainFont = nullptr;
     currentHover = nullptr;
     rng.seed(std::random_device{}());
+
+    saveDirectory = SDL_GetPrefPath("grassdne", "sdlminesweeper");
+    if (saveDirectory == NULL) {
+        printf("Error getting save directory: %s", SDL_GetError());
+    }
 }
+
 
 void Game::OnStart() {
     load();
@@ -315,15 +322,16 @@ void Game::ready() {
     state = GameState::READY;
 }
 
-
 namespace Save {
     char HEADER[] = "MINE ";
-    const char *FILE = "save/data.bin";
+    const char *FILE = "data.bin";
     size_t DATA_BUFFER = 1028;
 }
 
 void Game::save() {
-    SDL_RWops* out = SDL_RWFromFile(Save::FILE, "w+b");
+    std::string file = std::string(saveDirectory) + Save::FILE;
+
+    SDL_RWops* out = SDL_RWFromFile(file.c_str(), "w+b");
     SDL_RWwrite(out, Save::HEADER, 1, sizeof(Save::HEADER) - 1);
 
     SDL_WriteU8(out, 'r');
@@ -344,7 +352,9 @@ void Game::save() {
 }
 
 void Game::load() {
-    SDL_RWops* in = SDL_RWFromFile(Save::FILE, "r+b");
+    std::string file = std::string(saveDirectory) + Save::FILE;
+
+    SDL_RWops* in = SDL_RWFromFile(file.c_str(), "r+b");
     if (in == NULL) {
         printf("No save file found\n");
         return;
