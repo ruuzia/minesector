@@ -112,15 +112,15 @@ enum GameState {
 
 class Game {
 public:
-    Game(int rows, int cols);
-    Game();
+    Game(SDL_Window *window, int rows, int cols);
+    Game(SDL_Window *window);
     ~Game();
 
     int state;
 
     // Renderer and window are global
 
-    void loadMedia(SDL_Window *window);
+    void loadMedia();
     bool initialRender();
 
     void OnUpdate(double dt);
@@ -147,6 +147,9 @@ public:
     char* saveDirectory;
 
 private:
+    SDL_Window *window;
+    Font mainFont;
+
     int screen_width, screen_height;
     Text title;
     Text flagCounter;
@@ -168,13 +171,9 @@ private:
 
     void onRevealTile(Tile& tile);
 
-    SDL_Window *window;
 
     std::vector<Uint8> tileDatas;
 
-    // Font class?
-    //
-    TTF_Font* mainFont;
 
     Tile *currentHover;
 

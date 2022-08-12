@@ -2,20 +2,22 @@
 #define TEXT_H
 
 #include <SDL_ttf.h>
-#include <SDL.h>
 #include <string>
 #include "texture.h"
 #include "color.h"
+#include "font.h"
+
 
 class Text {
 public:
-    Text(TTF_Font *font = nullptr, std::string string_={});
+    Text(std::string string_={}, Color color = {0.f, 0.f, 0.f});
     ~Text() = default;
 
     void render();
     void load();
 
-    void setFont(TTF_Font *font_) {
+    //void setFont(Font font_) {
+    void setFont(Font const &font_) {
         font = font_;
         loaded = false;
     }
@@ -42,7 +44,7 @@ public:
     int x, y;
 
     bool loaded = false;
-    TTF_Font *font;
+    Font font;
     std::string string;
     Color color;
     float scale;

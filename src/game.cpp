@@ -4,7 +4,6 @@
 #include "color.h"
 #include <algorithm>
 
-const int TITLE_FONT_SIZE = 40;
 const int TITLE_SPACE_ABOVE = 15;
 const int TILE_SIZE = 32;
 const float PERCENT_MINES = 0.20;
@@ -184,9 +183,6 @@ void Tile::playUncoverAnim(Uint32 delay) {
 }
 
 void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals) const {
-    //printf("row: %d ;; col: %d\n", row, col);
-    //printf("rows: %d ;; cols: %d\n\n", game->rows, game->cols);
-    fflush(stdout);
     const int left = col - 1;
     const int right = col + 1;
     const int below = row + 1;
@@ -261,14 +257,21 @@ void Game::OnUpdate(double dt) {
 }
 
 Game::~Game() {
-    TTF_CloseFont(mainFont);
     SDL_free(saveDirectory);
 }
 
-Game::Game() : Game(SIZES[1].rows, SIZES[1].cols) {}
+Game::Game(SDL_Window *window) : Game(window, SIZES[1].rows, SIZES[1].cols) {}
 
-Game::Game(int rows, int cols) : rows(rows), cols(cols) {
-    mainFont = nullptr;
+Game::Game(SDL_Window *window, int rows, int cols)
+    : rows(rows)
+    , cols(cols)
+    , window(window)
+    , mainFont("fonts/Arbutus-Regular.ttf")
+    , title("Minesweeper")
+    , flagCounter("0/? flags", 0xA00000)
+    , restartBtn("Restart!", 0xFF1000)
+    , playAgainBtn("Play again?", 0x00C000)
+{
     currentHover = nullptr;
     rng.seed(std::random_device{}());
 
@@ -276,6 +279,8 @@ Game::Game(int rows, int cols) : rows(rows), cols(cols) {
     if (saveDirectory == NULL) {
         printf("Error getting save directory: %s", SDL_GetError());
     }
+
+    loadMedia();
 }
 
 
@@ -332,6 +337,7 @@ void Game::save() {
     std::string file = std::string(saveDirectory) + Save::FILE;
 
     SDL_RWops* out = SDL_RWFromFile(file.c_str(), "w+b");
+
     SDL_RWwrite(out, Save::HEADER, 1, sizeof(Save::HEADER) - 1);
 
     SDL_WriteU8(out, 'r');
@@ -449,8 +455,6 @@ enum GameAnims {
 };
 
 void Game::onLost(Tile& mine) {
-    printf("Game lost!\n"); fflush(stdout);
-
     state |= GameState::LOST;
 
     mine.animState.kill();
@@ -695,20 +699,10 @@ void Tile::loadMedia() {
     }
 }
 
-void Game::loadMedia(SDL_Window *win) {
-    window = win;
-    /** Fonts **/
-    mainFont = TTF_OpenFont("fonts/Arbutus-Regular.ttf", TITLE_FONT_SIZE);
-    if (mainFont == nullptr) {
-        throw std::runtime_error("Failed to load font! SDL_ttf error: " + std::string(TTF_GetError()));
-    }
-
-    title.setString("Minesweeper");
-    title.setColor(Color(0x000000));
+void Game::loadMedia() {
     title.setFont(mainFont);
     title.load();
 
-    flagCounter.setColor(Color(0xA00000));
     flagCounter.setFont(mainFont);
     flagCounter.setScale(0.4);
     updateFlagCount();
@@ -716,14 +710,10 @@ void Game::loadMedia(SDL_Window *win) {
     Tile::loadMedia();
 
     restartBtn.text.setFont(mainFont);
-    restartBtn.text.setColor(Color(0xFF1000));
-    restartBtn.text.setString("Restart!");
     restartBtn.setScale(0.5);
     restartBtn.load();
 
     playAgainBtn.text.setFont(mainFont);
-    playAgainBtn.text.setColor(Color(0x00C000));
-    playAgainBtn.text.setString("Play again?");
     playAgainBtn.setScale(0.5);
     playAgainBtn.load();
 

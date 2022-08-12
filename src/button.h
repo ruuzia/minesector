@@ -35,7 +35,7 @@ private:
 
 class TextButton : public Button {
 public:
-    TextButton(TTF_Font *font = nullptr);
+    TextButton(std::string string = "", Color color = {0.f, 0.f, 0.f});
     ~TextButton();
 
     void render();

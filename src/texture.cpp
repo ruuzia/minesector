@@ -1,5 +1,5 @@
 #include "texture.h"
-#include <SDL.h>
+#include <SDL_rect.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 
@@ -61,9 +61,11 @@ void Texture::loadFile(std::string& path) {
     imgHeight = height;
 }
 
+//void Texture::loadText(Font &font, const char *text, SDL_Color color) {
 void Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
     free();
 
+    //TTF_Font *fnt = font.raw();
     // Need to create temp surface and convert to texture
     SDL_Surface *tmpSurface = TTF_RenderText_Solid(font, text, color);
     if (tmpSurface == nullptr) {

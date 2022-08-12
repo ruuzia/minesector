@@ -1,12 +1,14 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include "SDL.h"
+#include <stdexcept>
+
+#include "SDL_rect.h"
 #include "SDL_ttf.h"
 #include "SDL_image.h"
 
 #include "common.h"
-#include <stdexcept>
+
 
 class Texture
 {
@@ -22,6 +24,7 @@ public:
         setSize(w, h);
     }
 
+    //void loadText(Font &font, const char* text, SDL_Color color);
     void loadText(TTF_Font *font, const char* text, SDL_Color color);
 
     void free();

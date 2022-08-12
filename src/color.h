@@ -1,6 +1,6 @@
 #ifndef COLOR_H
 #define COLOR_H
-#include "SDL.h"
+#include "SDL_pixels.h"
 #include "common.h"
 
 // Use with hexadecimal literals for hex colors

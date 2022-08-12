@@ -26,6 +26,7 @@ set( SOURCES
     src/anim.cpp
     src/text.cpp
     src/color.cpp
+    src/font.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})

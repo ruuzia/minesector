@@ -1,4 +1,6 @@
+// I need this on Windows for some reason
 #define SDL_MAIN_HANDLED
+
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
@@ -40,7 +42,7 @@ void SDL::init() {
         throw std::runtime_error("SDL could not initialize! SDL Error: " + std::string(SDL_GetError()));
     }
 
-    window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -58,12 +60,10 @@ void SDL::init() {
     if (TTF_Init() == -1) {
         throw std::runtime_error("SDL_ttf could not initialize. SDL_ttf error: " + std::string(TTF_GetError()));
     }
+
+    SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
-
-static void loadMedia(SDL const& sdl, Game &game) {
-    game.loadMedia(sdl.window);
-}
 
 static bool Update(Game &game, double dt) {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -124,13 +124,8 @@ static bool Update(Game &game, double dt) {
 const int FPS = 60;
 const int TICKS_PER_FRAME = 1000 / FPS;
 
-int main(int argc, char **argv) {
-    (void)argc; (void) argv;
-
+int main(void) {
     SDL sdl;
-
-    Game game;
-
 
     try {
         sdl.init();
@@ -140,31 +135,34 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+
     try {
-        loadMedia(sdl, game);
+        //loadMedia(sdl, game);
+        Game game(sdl.window);
+        bool running = true;
+        Uint32 lastFrame = SDL_GetTicks();
+        game.OnStart();
+
+        while (running) {
+            Uint32 current = SDL_GetTicks();
+            double dt = (current - lastFrame) / 1000.0;
+            lastFrame = current;
+            running = Update(game, dt);
+
+            const int updateTime = SDL_GetTicks() - lastFrame;
+            if (updateTime < TICKS_PER_FRAME) {
+                SDL_Delay(TICKS_PER_FRAME - updateTime);
+            }
+        }
+
+        game.save();
     }
+
     catch (const std::runtime_error& ex) {
-        printf("Failed to load media.\n%s\n", ex.what());
+        printf("%s\n", ex.what());
         return 1;
     }
 
-    bool running = true;
-    Uint32 lastFrame = SDL_GetTicks();
-    game.OnStart();
-
-    while (running) {
-        Uint32 current = SDL_GetTicks();
-        double dt = (current - lastFrame) / 1000.0;
-        lastFrame = current;
-        running = Update(game, dt);
-
-        const int updateTime = SDL_GetTicks() - lastFrame;
-        if (updateTime < TICKS_PER_FRAME) {
-            SDL_Delay(TICKS_PER_FRAME - updateTime);
-        }
-    }
-
-    game.save();
 
     return 0;
 
