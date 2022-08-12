@@ -10,17 +10,12 @@
 
 class Text {
 public:
-    Text(std::string string_={}, Color color = {0.f, 0.f, 0.f});
+    Text(Font const* font, std::string string_={}, Color color = {0.f, 0.f, 0.f});
     ~Text() = default;
 
     void render();
     void load();
 
-    //void setFont(Font font_) {
-    void setFont(Font const &font_) {
-        font = font_;
-        loaded = false;
-    }
     void setString(std::string string_) {
         string = string_;
         loaded = false;
@@ -44,7 +39,7 @@ public:
     int x, y;
 
     bool loaded = false;
-    Font font;
+    Font const* font;
     std::string string;
     Color color;
     float scale;

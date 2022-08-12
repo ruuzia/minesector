@@ -35,7 +35,7 @@ private:
 
 class TextButton : public Button {
 public:
-    TextButton(std::string string = "", Color color = {0.f, 0.f, 0.f});
+    TextButton(Font const* font = nullptr, std::string string = "", Color color = {0.f, 0.f, 0.f});
     ~TextButton();
 
     void render();

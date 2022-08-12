@@ -267,10 +267,10 @@ Game::Game(SDL_Window *window, int rows, int cols)
     , cols(cols)
     , window(window)
     , mainFont("fonts/Arbutus-Regular.ttf")
-    , title("Minesweeper")
-    , flagCounter("0/? flags", 0xA00000)
-    , restartBtn("Restart!", 0xFF1000)
-    , playAgainBtn("Play again?", 0x00C000)
+    , title(&mainFont, "Minesweeper")
+    , flagCounter(&mainFont, "0/? flags", 0xA00000)
+    , restartBtn(&mainFont, "Restart!", 0xFF1000)
+    , playAgainBtn(&mainFont, "Play again?", 0x00C000)
 {
     currentHover = nullptr;
     rng.seed(std::random_device{}());
@@ -700,31 +700,26 @@ void Tile::loadMedia() {
 }
 
 void Game::loadMedia() {
-    title.setFont(mainFont);
     title.load();
 
-    flagCounter.setFont(mainFont);
     flagCounter.setScale(0.4);
     updateFlagCount();
 
     Tile::loadMedia();
 
-    restartBtn.text.setFont(mainFont);
     restartBtn.setScale(0.5);
     restartBtn.load();
 
-    playAgainBtn.text.setFont(mainFont);
     playAgainBtn.setScale(0.5);
     playAgainBtn.load();
 
     {
 
         const int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
-        difficultyBtns.resize(NUMBTNS);
+        difficultyBtns.resize(NUMBTNS, &mainFont);
 
         for (int i = 0; i < NUMBTNS; ++i) {
             auto& btn = difficultyBtns[i];
-            btn.text.setFont(mainFont);
             btn.text.setColor(DIFFICULTY_COLORS[i]);
             btn.text.setString(DIFFICULTY_STRINGS[i]);
             btn.text.load();
@@ -762,7 +757,6 @@ void Game::positionItems() {
 
     // Play again and restart buttons
     y += TILE_SIZE;
-    restartBtn.text.setFont(mainFont);
     restartBtn.text.setColor(Color(0xFF1000));
     restartBtn.text.setString("Restart!");
     restartBtn.setScale(0.5);
@@ -770,7 +764,6 @@ void Game::positionItems() {
     restartBtn.setCenterX(screen_width / 2);
     restartBtn.setY(y);
 
-    playAgainBtn.text.setFont(mainFont);
     playAgainBtn.text.setColor(Color(0x00C000));
     playAgainBtn.text.setString("Play again?");
     playAgainBtn.setScale(0.5);

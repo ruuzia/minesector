@@ -12,6 +12,8 @@ void Font::load(std::string path, int size) {
     }
 }
 Font::~Font() {
-    TTF_CloseFont(font);
+    if (font != nullptr) {
+        TTF_CloseFont(font);
+    }
 }
 

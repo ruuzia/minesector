@@ -24,7 +24,7 @@ bool Button::isMouseOver(int mouseX, int mouseY) const {
 }
 
 
-TextButton::TextButton(std::string string, Color color) : Button(), text(string, color) {
+TextButton::TextButton(Font const* font, std::string string, Color color) : Button(), text(font, string, color) {
     scale = 1.0;
     borderWidth = 15;
     bgcolor = {HEX(0xF0F0F0), 0xE0};
