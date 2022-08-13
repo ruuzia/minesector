@@ -61,7 +61,7 @@ void SDL::init() {
         throw std::runtime_error("SDL_ttf could not initialize. SDL_ttf error: " + std::string(TTF_GetError()));
     }
 
-    SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    //SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 
