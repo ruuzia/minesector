@@ -13,7 +13,7 @@ Color& Color::operator*=(const Color& rhs) {
     return *this;
 }
 
-const SDL_Color Color::as_sdl() {
+const SDL_Color Color::as_sdl() const {
     SDL_Color sdl_color {PtoU8(r), PtoU8(g), PtoU8(b), PtoU8(a)};
     return sdl_color;
 }
