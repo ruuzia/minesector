@@ -65,10 +65,27 @@ void SDL::init() {
 }
 
 
+// I need to use an event filter to support updating *while* resizing on windows
+// Because Windows like to block the main thread
+static int event_filter(void *game, SDL_Event *e) {
+    if (e->type == SDL_WINDOWEVENT && e->window.event == SDL_WINDOWEVENT_RESIZED) {
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_RenderClear(renderer);
+            
+        static_cast<Game *>(game)->OnUpdate(0.0);
+
+        SDL_RenderPresent(renderer);
+    }
+    return 1;
+}
+
+
 static bool Update(Game &game, double dt) {
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderClear(renderer);
+
 
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -142,6 +159,8 @@ int main(void) {
         bool running = true;
         Uint32 lastFrame = SDL_GetTicks();
         game.OnStart();
+
+        SDL_SetEventFilter(event_filter, &game);
 
         while (running) {
             Uint32 current = SDL_GetTicks();
