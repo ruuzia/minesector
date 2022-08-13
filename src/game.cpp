@@ -27,42 +27,49 @@ Tile::Tile(Texture *tex) : Button(tex) {
 }
 
 enum TileSaveData {
-    HIDDEN = 1,
-    MINE = 2,
-    FLAGGED = 4,
-    RED = 8,
+    TILE_HIDDEN = 1,
+    TILE_MINE = 2,
+    TILE_FLAGGED = 4,
+    TILE_RED = 8,
+    TILE_REMOVED = 16,
 
-    DEFAULT = HIDDEN,
+    TILE_DEFAULT = HIDDEN,
 };
 
 Uint8 Tile::save() {
     Uint8 data = 0;
-    if (isHidden())  data |= TileSaveData::HIDDEN;
-    if (isMine())    data |= TileSaveData::MINE;
-    if (isFlagged()) data |= TileSaveData::FLAGGED;
-    if (isRed)       data |= TileSaveData::RED;
+    if (isHidden())  data |= TileSaveData::TILE_HIDDEN;
+    if (isMine())    data |= TileSaveData::TILE_MINE;
+    if (isFlagged()) data |= TileSaveData::TILE_FLAGGED;
+    if (isRed)       data |= TileSaveData::TILE_RED;
+    if (removed)     data |= TileSaveData::TILE_REMOVED;
     return data;
 }
 
 void Tile::load(Uint8 data) {
-    setMine   (data & TileSaveData::MINE);
-    setHidden (data & TileSaveData::HIDDEN);
-    setFlagged(data & TileSaveData::FLAGGED);
-    isRed = data & TileSaveData::RED;
+    setMine   (data & TileSaveData::TILE_MINE);
+    setHidden (data & TileSaveData::TILE_HIDDEN);
+    setFlagged(data & TileSaveData::TILE_FLAGGED);
+    isRed = data & TileSaveData::TILE_RED;
+    removed = data & TileSaveData::TILE_REMOVED;
 }
 
 // No animations
 void Tile::forceUpdateTexture() {
-    if (isHidden()) {
-        background = &backgrounds[TTEX_HIDDEN];
+    if (removed) {
+        background = nullptr;
+        overlay = nullptr;
+    }
+    else if (isHidden()) {
+        background = &backgrounds[TileBG::HIDDEN];
         if (isFlagged()) {
-            overlay = &overlays[ICON_FLAG];
+            overlay = &overlays[TileOverlay::FLAG];
         }
     }
     else {
-        background = &backgrounds[isRed ? TTEX_RED_SQUARE : TTEX_BLANK_SQUARE];
+        background = &backgrounds[isRed ? TileBG::RED_SQUARE : TileBG::BLANK_SQUARE];
         if (isMine()) {
-            overlay = &overlays[ICON_MINE];
+            overlay = &overlays[TileOverlay::MINE];
         }
         else {
             overlay = &numbers[countTouchingMines()];
@@ -83,21 +90,21 @@ int Tile::countTouchingMines() const {
 }
 
 enum TileAnim {
-    FLAG = 1,
+    FLAG_ANIM = 1,
     UNCOVER,
     REVEALMINE,
 };
 
 
 void Tile::playFlagAnim() {
-    if (animState.active == TileAnim::FLAG) return;
+    if (animState.active == TileAnim::FLAG_ANIM) return;
 
     overlay = nullptr;
-    background = &backgrounds[TTEX_HIDDEN];
+    background = &backgrounds[TileBG::HIDDEN];
 
-    animState.start(TileAnim::FLAG, new FlagAnim(&overlays[ICON_FLAG], {x, y}, flagged),
+    animState.start(TileAnim::FLAG_ANIM, new FlagAnim(&overlays[TileOverlay::FLAG], {x, y}, flagged),
         [&overlay=overlay, overlays=overlays, &flagged=flagged] () {
-            if (flagged) overlay = &overlays[ICON_FLAG];
+            if (flagged) overlay = &overlays[TileOverlay::FLAG];
         }
     );
 }
@@ -116,13 +123,13 @@ void Tile::unflag() {
 
 void Tile::mouseEnter() {
     if (isHidden() && isUnflagged()) {
-        background = &backgrounds[TTEX_HIGHLIGHT];
+        background = &backgrounds[TileBG::HIGHLIGHT];
     }
 }
 
 void Tile::mouseLeave() {
-    if (background == &backgrounds[TTEX_HIGHLIGHT]) {
-        background = &backgrounds[TTEX_HIDDEN];
+    if (background == &backgrounds[TileBG::HIGHLIGHT]) {
+        background = &backgrounds[TileBG::HIDDEN];
     }
 }
 
@@ -131,20 +138,22 @@ void Tile::reset() {
     setMine(false);
     setFlagged(false);
     setHidden(true);
-    background = &backgrounds[TTEX_HIDDEN];
+    background = &backgrounds[TileBG::HIDDEN];
     overlay = nullptr;
     isRed = false;
+    removed = false;
 }
 
 void Tile::red() {
     isRed = true;
-    background = &backgrounds[TTEX_RED_SQUARE];
+    background = &backgrounds[TileBG::RED_SQUARE];
 }
 
 void Tile::dissapear() {
     animState.start(-1, new WinTileAnim({x, y}, TILE_SIZE), [](){});
     background = nullptr;
     overlay = nullptr;
+    removed = true;
 }
 
 
@@ -155,8 +164,8 @@ void Tile::flip(bool recurse, Uint32 delay) {
 
         animState.start(TileAnim::REVEALMINE, new MineRevealAnim({x,y}, TILE_SIZE), [](){}, delay);
         animState.onstart = [this](){
-            overlay = &overlays[ICON_MINE];
-            background = &backgrounds[TTEX_BLANK_SQUARE];
+            overlay = &overlays[TileOverlay::MINE];
+            background = &backgrounds[TileBG::BLANK_SQUARE];
         };
     }
     else {
@@ -177,14 +186,14 @@ void Tile::flip(bool recurse, Uint32 delay) {
 
 void Tile::playUncoverAnim(Uint32 delay) {
         animState.start(TileAnim::UNCOVER,
-                new UncoverAnim(&backgrounds[TTEX_HIDDEN], {x, y}, game->rng),
+                new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng),
                 [](){}, delay
         );
 
         // Use onstart to set textures to account for `delay` parameter
         animState.onstart = [this]() {
             overlay = &numbers[countTouchingMines()];
-            background = &backgrounds[TTEX_BLANK_SQUARE];
+            background = &backgrounds[TileBG::BLANK_SQUARE];
         };
 }
 
@@ -394,7 +403,7 @@ void Game::load() {
     }
     state = SDL_ReadU8(in);
 
-    tileDatas.resize(rows*cols, TileSaveData::DEFAULT);
+    tileDatas.resize(rows*cols, TileSaveData::TILE_DEFAULT);
     for (int i = 0; (data = SDL_ReadU8(in)) == 't'; i++) {
         tileDatas[i] = SDL_ReadU8(in);
     }
@@ -666,15 +675,15 @@ void Game::generateMines() {
 }
 
 std::string TILE_FILES[] = {
-    /*[TTEX_BLANK_SQUARE] = */"images/square_blank.png",
-    /*[TTEX_HIDDEN] = */"images/tile.png",
-    /*[TTEX_HIGHLIGHT] = */"images/hovered_tile.png",
-    /*[TTEX_RED_SQUARE] = */"images/square_red.png",
+    /*[TileBG::BLANK_SQUARE] = */"images/square_blank.png",
+    /*[TileBG::HIDDEN] = */"images/tile.png",
+    /*[TileBG::HIGHLIGHT] = */"images/hovered_tile.png",
+    /*[TileBG::RED_SQUARE] = */"images/square_red.png",
 };
 
 std::string ICON_FILES[] = {
-    /*[ICON_FLAG] = */"images/flag.png",
-    /*[ICON_MINE] = */"images/mine.png",
+    /*[TileOverlay::FLAG] = */"images/flag.png",
+    /*[TileOverlay::MINE] = */"images/mine.png",
 };
 
 
@@ -690,8 +699,8 @@ const Color NUMBER_COLORS[] = {
     0x7100c7,
 };
 
-Texture Tile::backgrounds[COUNT_TTEX];
-Texture Tile::overlays[COUNT_ICONS];
+Texture Tile::backgrounds[TILE_BG_COUNT];
+Texture Tile::overlays[TILE_OVERLAY_COUNT];
 Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
 
 const float NUMBER_SCALE = 0.8;
@@ -700,13 +709,14 @@ const float NUMBER_SCALE = 0.8;
 void Tile::loadMedia(Font const& font) {
     int w = TILE_SIZE;
     int h = TILE_SIZE;
-    for (int i = 0; i < COUNT_TTEX; ++i) {
+    for (int i = 0; i < TILE_BG_COUNT; ++i) {
         Tile::backgrounds[i].loadFile(TILE_FILES[i], w, h);
     }
 
-    for (int i = 0; i < COUNT_ICONS; ++i) {
+    for (int i = 0; i < TILE_OVERLAY_COUNT; ++i) {
         overlays[i].loadFile(ICON_FILES[i], w, h);
     }
+    overlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
 
     for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
         const char num[] = {char(i + '0'), '\0'};

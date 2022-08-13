@@ -15,33 +15,36 @@
 #define MAX_COLS 24
 #define MAX_ROWS 24
 
-typedef enum {
-    TTEX_BLANK_SQUARE = 0,
-    TTEX_HIDDEN,
-    TTEX_HIGHLIGHT,
-    TTEX_RED_SQUARE,
-    COUNT_TTEX,
-} TileTexture;
+enum TileBG {
+    BLANK_SQUARE = 0,
+    HIDDEN,
+    HIGHLIGHT,
+    RED_SQUARE,
+    TILE_BG_COUNT,
+};
 
-typedef enum {
-    ICON_FLAG = 0,
-    ICON_MINE,
-    COUNT_ICONS,
-} TileIcons;
+enum TileOverlay {
+    FLAG = 0,
+    MINE,
+    TILE_OVERLAY_COUNT,
+};
 
 
 class Game;
 
 class Tile : public Button {
 public:
-    static Texture backgrounds[COUNT_TTEX];
-    static Texture overlays[COUNT_ICONS];
+    static Texture backgrounds[TILE_BG_COUNT];
+    static Texture overlays[TILE_OVERLAY_COUNT];
     static Texture numbers[1 + NUMBER_TILES_COUNT];
     static void loadMedia(Font const& font);
 
+    int getWidth() const override { return TILE_SIZE; }
+    int getHeight() const override { return TILE_SIZE; }
+
     Texture *overlay;
 
-    void render();
+    void render() override;
 
     explicit Tile(Texture *tex = nullptr);
 
@@ -53,6 +56,7 @@ public:
 
     [[nodiscard]] bool isFlagged() const { return flagged; }
     [[nodiscard]] bool isUnflagged() const { return !flagged; }
+    [[nodiscard]] bool exists() const { return !removed; }
 
     void setMine(bool f) { mine = f; }
     void setFlagged(bool f) { flagged = f; }
@@ -73,6 +77,7 @@ public:
     }
 
     bool isRed;
+    bool removed;
 
     void setGame(Game *parent) { game = parent; }
 
