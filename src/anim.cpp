@@ -195,3 +195,21 @@ bool MineRevealAnim::OnUpdate(double dt) {
 
     return alpha > 0.3;
 }
+
+
+const double WinTileAnim::DELTA_ALPHA = -0.5;
+
+WinTileAnim::WinTileAnim(SDL_Point pos, int size) : pos(pos), size(size)
+{}
+
+void WinTileAnim::OnStart() {
+}
+
+bool WinTileAnim::OnUpdate(double dt) {
+    color.setToRender();
+
+    SDL_RenderFillRect(renderer, &fillrect);
+
+    color.a += dt * WinTileAnim::DELTA_ALPHA;
+    return color.a > 0.0;
+}

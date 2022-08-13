@@ -150,4 +150,21 @@ private:
 };
 
 
+class WinTileAnim : public Anim {
+public:
+    WinTileAnim(SDL_Point pos, int size);
+    ~WinTileAnim() override = default;
+
+    void OnStart() override;
+    bool OnUpdate(double dt) override;
+
+private:
+    SDL_Point pos;
+    int size;
+    Color color {0x008000};
+    SDL_Rect fillrect { pos.x, pos.y, size, size };
+    static const double DELTA_ALPHA;
+};
+
+
 #endif
