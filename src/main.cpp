@@ -72,7 +72,6 @@ Uint32 lastFrame;
 // I need to use an event filter to support updating *while* resizing on windows
 // Because Windows like to block the main thread
 static int event_filter(void *game, SDL_Event *e) {
-    return 1;
     if (e->type == SDL_WINDOWEVENT && e->window.event == SDL_WINDOWEVENT_RESIZED) {
         Uint32 current = SDL_GetTicks();
 
