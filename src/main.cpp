@@ -64,18 +64,30 @@ void SDL::init() {
     //SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
+const int FPS = 60;
+const int TICKS_PER_FRAME = 1000 / FPS;
+
+Uint32 lastFrame;
 
 // I need to use an event filter to support updating *while* resizing on windows
 // Because Windows like to block the main thread
 static int event_filter(void *game, SDL_Event *e) {
+    return 1;
     if (e->type == SDL_WINDOWEVENT && e->window.event == SDL_WINDOWEVENT_RESIZED) {
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_RenderClear(renderer);
-            
-        static_cast<Game *>(game)->OnUpdate(0.0);
+        Uint32 current = SDL_GetTicks();
 
-        SDL_RenderPresent(renderer);
+        if (current - lastFrame >= TICKS_PER_FRAME) {
+            double dt = (current - lastFrame) / 1000.0;
+            lastFrame = current;
+
+            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            SDL_RenderClear(renderer);
+                
+            static_cast<Game *>(game)->OnUpdate(dt);
+
+            SDL_RenderPresent(renderer);
+        }
     }
     return 1;
 }
@@ -138,9 +150,6 @@ static bool Update(Game &game, double dt) {
     return true;
 }
 
-const int FPS = 60;
-const int TICKS_PER_FRAME = 1000 / FPS;
-
 int main(void) {
     SDL sdl;
 
@@ -157,7 +166,7 @@ int main(void) {
         //loadMedia(sdl, game);
         Game game(sdl.window);
         bool running = true;
-        Uint32 lastFrame = SDL_GetTicks();
+        lastFrame = SDL_GetTicks();
         game.OnStart();
 
         SDL_SetEventFilter(event_filter, &game);
