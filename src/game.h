@@ -147,6 +147,7 @@ public:
 
     AnimState animState;
     void updateFlagCount();
+    void positionItems();
 
     int mineCount;
 
@@ -168,7 +169,6 @@ private:
     void ready();
     void resizeBoard();
     void restartGame();
-    void positionItems();
     void onLost(Tile& mine);
     void onWon();
     bool hasWon();

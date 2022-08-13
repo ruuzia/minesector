@@ -83,6 +83,7 @@ static int event_filter(void *game, SDL_Event *e) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_RenderClear(renderer);
                 
+            static_cast<Game *>(game)->positionItems();
             static_cast<Game *>(game)->OnUpdate(dt);
 
             SDL_RenderPresent(renderer);
@@ -91,9 +92,11 @@ static int event_filter(void *game, SDL_Event *e) {
     return 1;
 }
 
+Color bgColor = 0xE0E0E0;
+
 
 static bool Update(Game &game, double dt) {
-    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    bgColor.setToRender();
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderClear(renderer);
 

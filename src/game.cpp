@@ -6,9 +6,11 @@
 
 const int TITLE_SPACE_ABOVE = 15;
 const int TILE_SIZE = 32;
-const float PERCENT_MINES = 0.20;
+const float PERCENT_MINES = 0.15;
 
-const struct {int cols; int rows; } SIZES[] = { {10, 8}, {12, 10}, {14, 12} };
+const int STARTING_SAFE_COUNT = 15;
+
+const struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
 const std::string DIFFICULTY_STRINGS[] = {"Easy", "Medium", "Hard"};
 const Color DIFFICULTY_COLORS[] = {
     { 0x008010 },
@@ -621,7 +623,7 @@ void Game::generateStartingArea(Tile& root) {
     root.setHidden(false);
     root.setMine(false);
 
-    int count = 20;
+    int count = STARTING_SAFE_COUNT;
     flipTiles(root, count, toreveal);
 
     generateMines();
@@ -812,6 +814,12 @@ void Game::positionItems() {
     difficultyBtns[0].setCenterX((screen_width - midWidth - difficultyBtns[0].getWidth()) / 2 - 10);
 
     difficultyBtns[2].setCenterX((screen_width + midWidth + difficultyBtns[2].getWidth()) / 2 + 10);
+
+    y += difficultyBtns[0].getHeight() + 20;
+
+    if (y > screen_height) {
+        SDL_SetWindowSize(window, screen_width, y);
+    }
 }
 
 bool Game::hasWon() {
