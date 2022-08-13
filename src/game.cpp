@@ -141,6 +141,12 @@ void Tile::red() {
     background = &backgrounds[TTEX_RED_SQUARE];
 }
 
+void Tile::dissapear() {
+    animState.start(-1, new WinTileAnim({x, y}, TILE_SIZE), [](){});
+    background = nullptr;
+    overlay = nullptr;
+}
+
 
 void Tile::flip(bool recurse, Uint32 delay) {
     setHidden(false);
@@ -209,12 +215,11 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
 }
 
 void Tile::render() {
-    // Should always have a background
-    SDL_assert(background != nullptr);
-    background->render(x, y);
+    if (background)
+        background->render(x, y);
 
     if (overlay != nullptr) {
-        overlay->render(x, y);
+        overlay->render(x + (TILE_SIZE - overlay->getWidth()) / 2, y + (TILE_SIZE - overlay->getHeight()) / 2);
     }
 }
 
@@ -265,8 +270,8 @@ Game::Game(SDL_Window *window) : Game(window, SIZES[1].rows, SIZES[1].cols) {}
 Game::Game(SDL_Window *window, int rows, int cols)
     : rows(rows)
     , cols(cols)
-    , window(window)
     , mainFont("fonts/Arbutus-Regular.ttf")
+    , window(window)
     , title(&mainFont, "Minesweeper")
     , flagCounter(&mainFont, "0/? flags", 0xA00000)
     , restartBtn(&mainFont, "Restart!", 0xFF1000)
@@ -504,16 +509,24 @@ void Game::onLost(Tile& mine) {
     }
 }
 
+void Game::onWon() {
+    state |= GameState::WON;
+    
+    for (auto& row : board) for (auto& tile : row) {
+        if (tile.isMine()) {
+            tile.dissapear();
+        }
+    }
+}
+
 void Game::onRevealTile(Tile& revealed) {
     if (revealed.isMine()) {
         onLost(revealed);
     }
     else if (hasWon()) {
         printf("Game won!\n");
-        state |= GameState::WON;
+        onWon();
     }
-    else return;
-
 }
 
 void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
@@ -664,23 +677,27 @@ std::string ICON_FILES[] = {
     /*[ICON_MINE] = */"images/mine.png",
 };
 
-const char* NUMBER_FILES[] = {
-    nullptr,
-    "images/number_1.png",
-    "images/number_2.png",
-    "images/number_3.png",
-    "images/number_4.png",
-    "images/number_5.png",
-    "images/number_6.png",
-    "images/number_7.png",
-    "images/number_8.png",
+
+const Color NUMBER_COLORS[] = {
+    0x000000, // Number 0 has no text!
+    0x1300d8,
+    0x02850e,
+    0xcb001e,
+    0x130e46,
+    0x003e14,
+    0x460202,
+    0x986207,
+    0x7100c7,
 };
 
 Texture Tile::backgrounds[COUNT_TTEX];
 Texture Tile::overlays[COUNT_ICONS];
-Texture Tile::numbers[NUMBER_TILES_COUNT];
+Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
 
-void Tile::loadMedia() {
+const float NUMBER_SCALE = 0.8;
+
+
+void Tile::loadMedia(Font const& font) {
     int w = TILE_SIZE;
     int h = TILE_SIZE;
     for (int i = 0; i < COUNT_TTEX; ++i) {
@@ -691,12 +708,14 @@ void Tile::loadMedia() {
         overlays[i].loadFile(ICON_FILES[i], w, h);
     }
 
-    for (int i = 1; i < COUNT_TILE_NUMBERS; ++i) {
-        if (NUMBER_FILES[i]) {
-            std::string file = NUMBER_FILES[i];
-            numbers[i].loadFile(file, w, h);
-        }
+    for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
+        const char num[] = {char(i + '0'), '\0'};
+
+        const Color color = NUMBER_COLORS[i];
+        numbers[i].loadText(font.raw(), num, color.as_sdl());
+        numbers[i].setScale(NUMBER_SCALE);
     }
+
 }
 
 void Game::loadMedia() {
@@ -705,7 +724,7 @@ void Game::loadMedia() {
     flagCounter.setScale(0.4);
     updateFlagCount();
 
-    Tile::loadMedia();
+    Tile::loadMedia(mainFont);
 
     restartBtn.setScale(0.5);
     restartBtn.load();

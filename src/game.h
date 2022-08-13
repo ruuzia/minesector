@@ -36,8 +36,8 @@ class Tile : public Button {
 public:
     static Texture backgrounds[COUNT_TTEX];
     static Texture overlays[COUNT_ICONS];
-    static Texture numbers[NUMBER_TILES_COUNT];
-    static void loadMedia();
+    static Texture numbers[1 + NUMBER_TILES_COUNT];
+    static void loadMedia(Font const& font);
 
     Texture *overlay;
 
@@ -65,6 +65,7 @@ public:
     void red();
     void mouseEnter();
     void mouseLeave();
+    void dissapear();
 
     void OnUpdate(double dt) {
         render();
@@ -146,9 +147,9 @@ public:
 
     char* saveDirectory;
 
+    Font mainFont;
 private:
     SDL_Window *window;
-    Font mainFont;
 
     int screen_width, screen_height;
     Text title;
@@ -164,6 +165,7 @@ private:
     void restartGame();
     void positionItems();
     void onLost(Tile& mine);
+    void onWon();
     bool hasWon();
     void generateStartingArea(Tile& tile);
     void generateMines();
