@@ -4,13 +4,13 @@
 #include "color.h"
 #include <algorithm>
 
-const int TITLE_SPACE_ABOVE = 15;
-const int TILE_SIZE = 32;
-const float PERCENT_MINES = 0.15;
+constexpr int TITLE_SPACE_ABOVE = 15;
+constexpr int TILE_SIZE = 32;
+constexpr float PERCENT_MINES = 0.15;
 
-const int STARTING_SAFE_COUNT = 15;
+constexpr int STARTING_SAFE_COUNT = 15;
 
-const struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
+constexpr struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
 const std::string DIFFICULTY_STRINGS[] = {"Easy", "Medium", "Hard"};
 const Color DIFFICULTY_COLORS[] = {
     { 0x008010 },
@@ -35,7 +35,7 @@ enum TileSaveData {
     TILE_RED = 8,
     TILE_REMOVED = 16,
 
-    TILE_DEFAULT = HIDDEN,
+    TILE_DEFAULT = TILE_HIDDEN,
 };
 
 Uint8 Tile::save() {
@@ -705,7 +705,7 @@ Texture Tile::backgrounds[TILE_BG_COUNT];
 Texture Tile::overlays[TILE_OVERLAY_COUNT];
 Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
 
-const float NUMBER_SCALE = 0.8;
+constexpr float NUMBER_SCALE = 0.8;
 
 
 void Tile::loadMedia(Font const& font) {
@@ -746,7 +746,7 @@ void Game::loadMedia() {
 
     {
 
-        const int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
+        constexpr int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
         difficultyBtns.resize(NUMBTNS, &mainFont);
 
         for (int i = 0; i < NUMBTNS; ++i) {

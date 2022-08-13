@@ -10,8 +10,8 @@
 #include "texture.h"
 #include "game.h"
 
-const int SCREEN_WIDTH =  640 * 1.5;
-const int SCREEN_HEIGHT = 480 * 1.5;
+constexpr int SCREEN_WIDTH =  640 * 1.5;
+constexpr int SCREEN_HEIGHT = 480 * 1.5;
 
 SDL_Renderer *renderer;
 
@@ -64,8 +64,8 @@ void SDL::init() {
     //SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
-const int FPS = 60;
-const int TICKS_PER_FRAME = 1000 / FPS;
+constexpr int FPS = 60;
+constexpr int TICKS_PER_FRAME = 1000 / FPS;
 
 Uint32 lastFrame;
 

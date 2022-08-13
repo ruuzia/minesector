@@ -103,7 +103,7 @@ private:
 
     Game *game;
 
-    static const int TILE_SIZE = 32;
+    static constexpr int TILE_SIZE = 32;
 };
 
 enum GameState {

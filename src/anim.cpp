@@ -48,8 +48,8 @@ void AnimState::update(double dt) {
 }
 
 // Base of flag poll in GIMP
-const double FLAG_ROT_POINT_X = 18 / 64.0;
-const double FLAG_ROT_POINT_Y = 57 / 64.0;
+constexpr double FLAG_ROT_POINT_X = 18 / 64.0;
+constexpr double FLAG_ROT_POINT_Y = 57 / 64.0;
 
 FlagAnim::FlagAnim(const Texture *flagTex, SDL_Point pos, bool&isFlagged) : flag(flagTex), pos(pos), isFlagged(isFlagged)
 {
@@ -149,7 +149,7 @@ bool DetonationAnim::OnUpdate(double dt) {
 DetonationParticle::DetonationParticle(std::mt19937& rng, int x, int y)
     : x(x), y(y)
 {
-    const float MAX_SPEED = 150;
+    constexpr float MAX_SPEED = 150;
     born = SDL_GetTicks() * 0.001;
     dx = std::uniform_real_distribution<>{-MAX_SPEED, MAX_SPEED} (rng);
     dy = std::uniform_real_distribution<>(-MAX_SPEED, MAX_SPEED) (rng);
@@ -159,7 +159,7 @@ DetonationParticle::DetonationParticle(std::mt19937& rng, int x, int y)
 }
 
 
-const double DetonationParticle::DELTA_ALPHA = -0.2;
+constexpr double DetonationParticle::DELTA_ALPHA = -0.2;
 
 
 void DetonationParticle::render(double dt) {
@@ -177,7 +177,7 @@ void DetonationParticle::render(double dt) {
     SDL_RenderFillRect(renderer, &fillrect);
 }
 
-const double MineRevealAnim::DELTA_ALPHA = -1.0;
+constexpr double MineRevealAnim::DELTA_ALPHA = -1.0;
 
 MineRevealAnim::MineRevealAnim(SDL_Point pos, int size) : pos(pos), size(size) {
     alpha = 1.0;
@@ -197,7 +197,7 @@ bool MineRevealAnim::OnUpdate(double dt) {
 }
 
 
-const double WinTileAnim::DELTA_ALPHA = -0.5;
+constexpr double WinTileAnim::DELTA_ALPHA = -0.5;
 
 WinTileAnim::WinTileAnim(SDL_Point pos, int size) : pos(pos), size(size)
 {}
