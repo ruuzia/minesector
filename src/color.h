@@ -8,7 +8,7 @@
 #define HEX(N) Uint8(N >> 0x10), Uint8((N >> 0x08) & 0xFF), Uint8(N & 0xFF)
 
 #define U8toP(u8) float((u8) / 255.f)
-#define PtoU8(perc) Uint8(perc * 255)
+#define PtoU8(perc) Uint8((perc) * 255)
 
 // Color vales stored as real [0, 1]
 // Float or double?
