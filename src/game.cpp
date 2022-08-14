@@ -10,13 +10,15 @@ constexpr float PERCENT_MINES = 0.15;
 
 constexpr int STARTING_SAFE_COUNT = 15;
 
-constexpr struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
-const std::string DIFFICULTY_STRINGS[] = {"Easy", "Medium", "Hard"};
-const Color DIFFICULTY_COLORS[] = {
-    { 0x008010 },
-    { 0xF08000 },
-    { 0xA03000 },
-};
+namespace Difficulty {
+    constexpr struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
+    const std::string STRINGS[] = {"Easy", "Medium", "Hard"};
+    const Color COLORS[] = {
+        { 0x008010 },
+        { 0xF08000 },
+        { 0xA03000 },
+    };
+}
 
 
 Tile::Tile(Texture *tex) : Button(tex) {
@@ -28,32 +30,36 @@ Tile::Tile(Texture *tex) : Button(tex) {
     isRed = false;
 }
 
-enum TileSaveData {
-    TILE_HIDDEN = 1,
-    TILE_MINE = 2,
-    TILE_FLAGGED = 4,
-    TILE_RED = 8,
-    TILE_REMOVED = 16,
+namespace TileSaveData {
+    enum {
+        HIDDEN = 1,
+        MINE = 2,
+        FLAGGED = 4,
+        RED = 8,
+        REMOVED = 16,
 
-    TILE_DEFAULT = TILE_HIDDEN,
-};
+        DEFAULT = HIDDEN,
+    };
+}
 
 Uint8 Tile::save() {
+    using namespace TileSaveData;
     Uint8 data = 0;
-    if (isHidden())  data |= TileSaveData::TILE_HIDDEN;
-    if (isMine())    data |= TileSaveData::TILE_MINE;
-    if (isFlagged()) data |= TileSaveData::TILE_FLAGGED;
-    if (isRed)       data |= TileSaveData::TILE_RED;
-    if (removed)     data |= TileSaveData::TILE_REMOVED;
+    if (isHidden())  data |= HIDDEN;
+    if (isMine())    data |= MINE;
+    if (isFlagged()) data |= FLAGGED;
+    if (isRed)       data |= RED;
+    if (removed)     data |= REMOVED;
     return data;
 }
 
 void Tile::load(Uint8 data) {
-    setMine   (data & TileSaveData::TILE_MINE);
-    setHidden (data & TileSaveData::TILE_HIDDEN);
-    setFlagged(data & TileSaveData::TILE_FLAGGED);
-    isRed = data & TileSaveData::TILE_RED;
-    removed = data & TileSaveData::TILE_REMOVED;
+    using namespace TileSaveData;
+    setMine   (data & MINE);
+    setHidden (data & HIDDEN);
+    setFlagged(data & FLAGGED);
+    isRed =    data & RED;
+    removed =  data & REMOVED;
 }
 
 // No animations
@@ -276,7 +282,7 @@ Game::~Game() {
     SDL_free(saveDirectory);
 }
 
-Game::Game(SDL_Window *window) : Game(window, SIZES[1].rows, SIZES[1].cols) {}
+Game::Game(SDL_Window *window) : Game(window, Difficulty::SIZES[1].rows, Difficulty::SIZES[1].cols) {}
 
 Game::Game(SDL_Window *window, int rows, int cols)
     : rows(rows)
@@ -405,7 +411,7 @@ void Game::load() {
     }
     state = SDL_ReadU8(in);
 
-    tileDatas.resize(rows*cols, TileSaveData::TILE_DEFAULT);
+    tileDatas.resize(rows*cols, TileSaveData::DEFAULT);
     for (int i = 0; (data = SDL_ReadU8(in)) == 't'; i++) {
         tileDatas[i] = SDL_ReadU8(in);
     }
@@ -456,8 +462,8 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
         }
         for (size_t i = 0; i < difficultyBtns.size(); ++i) {
             if (difficultyBtns[i].isMouseOver(e.x, e.y)) {
-                rows = SIZES[i].rows;
-                cols = SIZES[i].cols;
+                rows = Difficulty::SIZES[i].rows;
+                cols = Difficulty::SIZES[i].cols;
                 resizeBoard();
                 return;
             }
@@ -701,8 +707,8 @@ const Color NUMBER_COLORS[] = {
     0x7100c7,
 };
 
-Texture Tile::backgrounds[TILE_BG_COUNT];
-Texture Tile::overlays[TILE_OVERLAY_COUNT];
+Texture Tile::backgrounds[TileBG::COUNT];
+Texture Tile::overlays[TileOverlay::COUNT];
 Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
 
 constexpr float NUMBER_SCALE = 0.8;
@@ -711,11 +717,11 @@ constexpr float NUMBER_SCALE = 0.8;
 void Tile::loadMedia(Font const& font) {
     int w = TILE_SIZE;
     int h = TILE_SIZE;
-    for (int i = 0; i < TILE_BG_COUNT; ++i) {
+    for (int i = 0; i < TileBG::COUNT; ++i) {
         Tile::backgrounds[i].loadFile(TILE_FILES[i], w, h);
     }
 
-    for (int i = 0; i < TILE_OVERLAY_COUNT; ++i) {
+    for (int i = 0; i < TileOverlay::COUNT; ++i) {
         overlays[i].loadFile(ICON_FILES[i], w, h);
     }
     overlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
@@ -746,13 +752,13 @@ void Game::loadMedia() {
 
     {
 
-        const int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
+        const int NUMBTNS = sizeof(Difficulty::SIZES) / sizeof(Difficulty::SIZES[0]);
         difficultyBtns.resize(NUMBTNS, &mainFont);
 
         for (int i = 0; i < NUMBTNS; ++i) {
             auto& btn = difficultyBtns[i];
-            btn.text.setColor(DIFFICULTY_COLORS[i]);
-            btn.text.setString(DIFFICULTY_STRINGS[i]);
+            btn.text.setColor(Difficulty::COLORS[i]);
+            btn.text.setString(Difficulty::STRINGS[i]);
             btn.text.load();
             btn.setScale(0.4);
         }

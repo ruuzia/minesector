@@ -15,27 +15,34 @@
 #define MAX_COLS 24
 #define MAX_ROWS 24
 
-enum TileBG {
-    BLANK_SQUARE = 0,
-    HIDDEN,
-    HIGHLIGHT,
-    RED_SQUARE,
-    TILE_BG_COUNT,
-};
+// using enum in namespaces for benefits of enum class
+// while letting me use them as indices
 
-enum TileOverlay {
-    FLAG = 0,
-    MINE,
-    TILE_OVERLAY_COUNT,
-};
+namespace TileBG {
+    enum {
+        BLANK_SQUARE = 0,
+        HIDDEN,
+        HIGHLIGHT,
+        RED_SQUARE,
+        COUNT,
+    };
+}
+
+namespace TileOverlay {
+    enum {
+        FLAG = 0,
+        MINE,
+        COUNT,
+    };
+}
 
 
 class Game;
 
 class Tile : public Button {
 public:
-    static Texture backgrounds[TILE_BG_COUNT];
-    static Texture overlays[TILE_OVERLAY_COUNT];
+    static Texture backgrounds[TileBG::COUNT];
+    static Texture overlays[TileOverlay::COUNT];
     static Texture numbers[1 + NUMBER_TILES_COUNT];
     static void loadMedia(Font const& font);
 
