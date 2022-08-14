@@ -746,7 +746,7 @@ void Game::loadMedia() {
 
     {
 
-        constexpr int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
+        const int NUMBTNS = sizeof(SIZES) / sizeof(SIZES[0]);
         difficultyBtns.resize(NUMBTNS, &mainFont);
 
         for (int i = 0; i < NUMBTNS; ++i) {

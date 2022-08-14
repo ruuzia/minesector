@@ -167,7 +167,7 @@ void DetonationParticle::render(double dt) {
     y += dy * dt;
     color.a += DELTA_ALPHA * dt;
 
-    color.setToRender();
+    color.draw();
     SDL_Rect fillrect;
     fillrect.w = 12;
     fillrect.h = 12;
@@ -206,8 +206,7 @@ void WinTileAnim::OnStart() {
 }
 
 bool WinTileAnim::OnUpdate(double dt) {
-    color.setToRender();
-
+    color.draw();
     SDL_RenderFillRect(renderer, &fillrect);
 
     color.a += dt * WinTileAnim::DELTA_ALPHA;

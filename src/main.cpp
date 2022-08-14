@@ -96,7 +96,7 @@ Color bgColor = 0xE0E0E0;
 
 
 static bool Update(Game &game, double dt) {
-    bgColor.setToRender();
+    bgColor.draw();
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderClear(renderer);
 

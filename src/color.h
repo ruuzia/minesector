@@ -52,7 +52,7 @@ public:
         a = color.a;
     }
 
-    void setToRender() const {
+    void draw() const {
         SDL_SetRenderDrawColor(renderer, PtoU8(r), PtoU8(g), PtoU8(b), PtoU8(a));
     }
 
