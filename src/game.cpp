@@ -554,18 +554,7 @@ void Game::onLost(Tile& mine) {
 
     animState.start(GameAnims::EXPLODE,
                     new DetonationAnim(Tile::backgrounds[TileBG::HIDDEN], rng, {mine.x, mine.y}, TILE_SIZE),
-                   [this](){
-        for (auto& row: board) for (Tile& tile : row) {
-                if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
-                    // Reveal all mines
-                    tile.flip();
-                }
-                else if (tile.isSafe() && tile.isFlagged()) {
-                    // Incorrect flag
-                    tile.red();
-                }
-            }
-    });
+                   [](){});
 
     std::vector<Tile *> mines;
     double delay = 0;
@@ -594,6 +583,16 @@ void Game::onLost(Tile& mine) {
         (*it)->flip(false, (Uint32)(delay*1000));
         delay += deltaDelay;
     }
+
+    // When the last mine is revealed, mark all incorrect flags
+    mines.back()->animState.onstart = [this]() {
+        for (auto& row: board) for (Tile& tile : row) {
+            if (tile.isSafe() && tile.isFlagged()) {
+                // Incorrect flag
+                tile.red();
+            }
+        }
+    };
 }
 
 void Game::onWon() {
