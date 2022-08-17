@@ -57,7 +57,6 @@ std::string SOUND_FILES[SoundEffects::COUNT] {
     "sounds/whoosh.wav",
     "sounds/blip.wav",
     "sounds/explode.wav",
-    "sounds/shovel.wav",
 };
 
 constexpr int VERT_COUNT = 6;

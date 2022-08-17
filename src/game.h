@@ -25,7 +25,6 @@ namespace SoundEffects {
         WHOOSH,
         BLIP,
         EXPLODE,
-        SHOVEL,
         COUNT,
     };
 }
