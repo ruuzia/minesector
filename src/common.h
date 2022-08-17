@@ -5,6 +5,9 @@
 #define OK true
 #define FAIL false
 
+// TODO: move somewhere else
+#define SECONDS() (SDL_GetTicks() * 0.001)
+
 // Global renderer!
 extern SDL_Renderer *renderer;
 

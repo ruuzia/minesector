@@ -28,110 +28,18 @@ public:
         return SDL_GetTicks() - startTime;
     }
 
-    Uint64 current;
-    int active;
+    bool isAnimActive(int code);
 
+    Uint64 current;
     callback onstart;
 private:
+    int active;
     bool started;
     Uint32 startTime;
     callback onfinish;
 
-    Anim* anim;
-    //std::unique_ptr<Anim> anim;
+    std::unique_ptr<Anim> anim;
 };
-
-
-class FlagAnim : public Anim {
-public:
-    FlagAnim(const Texture *flagTex, SDL_Point pos, bool& isFlagged);
-
-    // Call virtual destructor
-    ~FlagAnim() {}
-
-    bool OnUpdate(double dt);
-    void OnStart();
-
-private:
-    const Texture* flag;
-    SDL_Point pos;
-    bool& isFlagged;
-    double angle;
-    SDL_Point rotPoint;
-    float deltaAngle = 180.0;
-};
-
-class UncoverAnim : public Anim {
-public:
-    UncoverAnim(const Texture *hidden, SDL_Point pos, std::mt19937& rng);
-    // Call virtual destructor, nothing to free
-    ~UncoverAnim() {}
-
-    void OnStart() override;
-    bool OnUpdate(double dt) override;
-
-private:
-    const Texture *hidden;
-    SDL_Point pos;
-    std::mt19937 &rng;
-
-    double widthPercent;
-    double heightPercent;
-    double deltaWidth;
-    double deltaHeight;
-    bool inverseX;
-    bool inverseY;
-};
-
-// If I add more particles, I'll make a parent Particle class
-// But that's a lot of boilerplate for a single particle effect
-class DetonationParticle {
-public:
-    DetonationParticle(std::mt19937& rng, int x=0, int y=0);
-    ~DetonationParticle() = default;
-
-    [[nodiscard]] bool isDead() const {
-        return age() > lifetime;
-    }
-
-    void render(double dt);
-
-    [[nodiscard]] double age() const {
-        return (double)SDL_GetTicks() * 0.001 - born;
-    }
-private:
-    double lifetime;
-    double dx;
-    double dy;
-
-    float x;
-    float y;
-    double born;
-
-    Color color { 0xFF0000 };
-
-    static const double DELTA_ALPHA;
-};
-
-class DetonationAnim : public Anim {
-public:
-    DetonationAnim(std::mt19937& rng, SDL_Point pos, int size);
-    ~DetonationAnim() override = default;
-
-    void OnStart() override;
-    bool OnUpdate(double  dt) override;
-
-private:
-    SDL_Point pos;
-    std::vector<DetonationParticle> particles;
-
-
-    double startTime;
-    double PARTICLE_EMIT_TIME = 5.0;
-
-    std::mt19937& rng;
-};
-
 
 class MineRevealAnim : public Anim {
 public:
@@ -146,25 +54,8 @@ private:
     int size;
 
     double alpha;
-    static const double DELTA_ALPHA;
 };
 
-
-class WinTileAnim : public Anim {
-public:
-    WinTileAnim(SDL_Point pos, int size);
-    ~WinTileAnim() override = default;
-
-    void OnStart() override;
-    bool OnUpdate(double dt) override;
-
-private:
-    SDL_Point pos;
-    int size;
-    Color color {0x008000};
-    SDL_Rect fillrect { pos.x, pos.y, size, size };
-    static const double DELTA_ALPHA;
-};
 
 
 #endif

@@ -55,6 +55,8 @@ public:
         return texture != nullptr;
     }
 
+    [[nodiscard]] SDL_Texture *raw() const { return texture; }
+
     //SDL_Point pos;
 
 private:

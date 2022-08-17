@@ -4,6 +4,7 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 
 #include <cstdio>
 
@@ -55,10 +56,14 @@ void SDL::init() {
 
     int imgFlags = IMG_INIT_PNG;
     if (!(IMG_Init(imgFlags) & imgFlags))
-        throw std::runtime_error("SDL_image could not initialize. SDL_image Error: " + std::string(IMG_GetError()));
+        throw std::runtime_error("SDL_image could not initialize: " + std::string(IMG_GetError()));
 
     if (TTF_Init() == -1) {
-        throw std::runtime_error("SDL_ttf could not initialize. SDL_ttf error: " + std::string(TTF_GetError()));
+        throw std::runtime_error("SDL_ttf could not initialize: " + std::string(TTF_GetError()));
+    }
+
+    if (Mix_OpenAudio(/* Frequency */ 44100, MIX_DEFAULT_FORMAT, /* Channels */ 2, /* Chunksize */ 2048) < 0) {
+        throw std::runtime_error("SDL_mixer count not initialize: " + std::string(Mix_GetError()));
     }
 
     //SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);

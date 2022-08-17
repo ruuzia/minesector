@@ -1,8 +1,293 @@
+#include <string>
+#include <algorithm>
 #include "common.h"
 #include "game.h"
-#include <string>
 #include "color.h"
-#include <algorithm>
+
+namespace Detonation {
+    namespace Particle {
+        namespace Speed {
+            constexpr float MAX = 150.0;
+            constexpr float MIN = -MAX;
+        }
+        
+        namespace Green {
+            constexpr float MIN = 0.0;
+            constexpr float MAX = 0.6;
+        }
+
+        namespace Lifetime {
+            constexpr float MIN = 1.0;
+            constexpr float MAX = 2.0;
+        }
+
+        namespace Depth {
+            constexpr int MIN = 0;
+            constexpr int MAX = 2;
+        }
+        constexpr float POS_VARIATION = 100.0;
+
+        namespace Ember {
+            constexpr float DELTA_ALPHA = -0.2;
+
+            namespace Size {
+                constexpr float MIN = 6;
+                constexpr float MAX = 10;
+            }
+        }
+
+        namespace Piece {
+            constexpr float DELTA_ALPHA = -0.1;
+
+            namespace Size {
+                constexpr float MAX = 15;
+            }
+        }
+    }
+
+    namespace Emitter {
+        constexpr float PERIOD = 0.05;
+        constexpr int COUNT = 3;
+        constexpr float TIME = 10.0;
+    }
+}
+
+std::string SOUND_FILES[SoundEffects::COUNT] {
+    "sounds/flag.wav",
+    "sounds/whoosh.wav",
+    "sounds/blip.wav",
+    "sounds/explode.wav",
+    "sounds/shovel.wav",
+};
+
+constexpr int VERT_COUNT = 6;
+
+
+class DetonationParticle {
+protected:
+    double lifetime;
+    double dx;
+    double dy;
+
+    float x;
+    float y;
+    
+    double born;
+
+public:
+    int depth;
+    DetonationParticle(std::mt19937& rng, float x, float y) : x(x), y(y) {
+
+        born = SECONDS();
+        using namespace Detonation::Particle;
+        depth = std::uniform_int_distribution<>(Depth::MIN, Depth::MAX) (rng);
+    }
+    virtual ~DetonationParticle() = default;
+
+    virtual void render(double dt) = 0;
+
+    [[nodiscard]] bool isDead() const {
+        return age() > lifetime;
+    }
+
+    [[nodiscard]] double age() const {
+        return SECONDS() - born;
+    }
+};
+
+class DestructionParticle : public DetonationParticle {
+public:
+    DestructionParticle(Texture &tex, std::mt19937& rng, int x=0, int y=0);
+    ~DestructionParticle() override = default;
+
+    void render(double dt) override;
+
+private:
+    SDL_Point vertpos[VERT_COUNT];
+    double born;
+
+    Color color { 0xF00000 };
+    Texture &tex;
+};
+
+class EmberParticle : public DetonationParticle {
+public:
+    EmberParticle(std::mt19937& rng, int x=0, int y=0)
+        : DetonationParticle(rng, x, y)
+    {
+        using random = std::uniform_real_distribution<>;
+        using namespace Detonation::Particle;
+
+        dx = random{Speed::MIN, Speed::MAX} (rng);
+        dy = random(Speed::MIN, Speed::MAX) (rng);
+        lifetime = random(Lifetime::MIN, Lifetime::MAX) (rng);
+        size = random(Ember::Size::MIN, Ember::Size::MAX) (rng);
+
+        color.g = std::uniform_real_distribution<>(Green::MIN, Green::MAX) (rng);
+    }
+    ~EmberParticle() override = default;
+
+    void render(double dt) override {
+        using namespace Detonation::Particle;
+        x += dx * dt;
+        y += dy * dt;
+        color.a += Ember::DELTA_ALPHA * dt;
+
+        color.draw();
+        SDL_Rect fillrect;
+        fillrect.w = size;
+        fillrect.h = size;
+        fillrect.x = x;
+        fillrect.y = y;
+
+        SDL_RenderFillRect(renderer, &fillrect);
+    }
+
+private:
+    int size;
+    Color color { 0xFF0000 };
+};
+
+class DetonationAnim : public Anim {
+public:
+    DetonationAnim(Texture &tex, std::mt19937& rng, SDL_Point pos, int size);
+    ~DetonationAnim() override = default;
+
+    void OnStart() override;
+    bool OnUpdate(double  dt) override;
+
+private:
+    SDL_Point pos;
+    std::vector<std::unique_ptr<DetonationParticle>> particles;
+
+    double startTime;
+
+    Texture &tex;
+    std::mt19937& rng;
+
+    void emitParticle(std::unique_ptr<DetonationParticle> part);
+};
+
+
+DetonationAnim::DetonationAnim(Texture &tex, std::mt19937& rng, SDL_Point tilePos, int size)
+    : tex(tex), rng(rng)
+{
+    // Center of tile
+    pos.x = tilePos.x + size / 2;
+    pos.y = tilePos.y + size / 2;
+}
+
+void DetonationAnim::OnStart() {
+    startTime = SECONDS();
+}
+
+void DetonationAnim::emitParticle(std::unique_ptr<DetonationParticle> part) {
+    for (auto& ptr : particles) {
+        if (ptr->isDead()) {
+            ptr = std::move(part);
+            return;
+        }
+    }
+
+    // Nothing to recycle, add new particle
+    particles.push_back(std::move(part));
+}
+
+bool DetonationAnim::OnUpdate(double dt) {
+    using namespace Detonation;
+
+    if (SECONDS() - startTime < Emitter::TIME) {
+        if (particles.empty() || particles.back()->age() > Emitter::PERIOD) {
+            for (int i = 0; i < Emitter::COUNT; ++i) {
+                //particles.emplace_back(tex, rng, pos.x, pos.y);
+                if (std::uniform_real_distribution<>(0.0, 1.0)(rng) < 0.5) {
+                    emitParticle(std::make_unique<DestructionParticle>(tex, rng, pos.x, pos.y));
+                }
+                else {
+                    emitParticle(std::make_unique<EmberParticle>(rng, pos.x, pos.y));
+                }
+            }
+        }
+    }
+
+    bool rendering = false;
+    // Iterate through particles for each depth
+    for (int i = 0; i < Particle::Depth::MAX; ++i) {
+        for (auto& particle : particles) {
+            if (particle->depth == i && !particle->isDead()) {
+                particle->render(dt);
+                rendering = true;
+            }
+        }
+    }
+
+    return rendering;
+}
+
+DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x, int y)
+    : DetonationParticle(rng, x, y), tex(tex)
+{
+    using randreal = std::uniform_real_distribution<>;
+    using namespace Detonation::Particle;
+
+    born = SECONDS();
+    dx = randreal( Speed::MIN, Speed::MAX) (rng);
+    dy = randreal( Speed::MIN, Speed::MAX) (rng);
+
+    lifetime = randreal(Lifetime::MIN * 2, Lifetime::MAX * 2) (rng);
+    color.g = randreal(Green::MIN, Green::MAX) (rng);
+
+    x += randreal(-POS_VARIATION, POS_VARIATION)(rng);
+    y += randreal(-POS_VARIATION, POS_VARIATION)(rng);
+
+    constexpr int QUAD_SIDES = 4;
+    SDL_Point quadverts[QUAD_SIDES];
+
+    double theta = 0;
+    for (int i = 0; i < QUAD_SIDES; ++i) {
+        theta = randreal(theta, 2 * M_PI)(rng);
+        //double r = randreal(15, 20)(rng);
+        quadverts[i].x = int(cos(theta) * Piece::Size::MAX);
+        quadverts[i].y = int(sin(theta) * Piece::Size::MAX);
+    }
+
+    // Convert quad to triangle vertices
+    const int indices[VERT_COUNT] = {0, 1, 2, 2, 3, 0};
+    for (int i = 0; i < VERT_COUNT; ++i) {
+        vertpos[i] = quadverts[indices[i]];
+    }
+
+}
+
+
+void DestructionParticle::render(double dt) {
+    using namespace Detonation::Particle;
+    x += dx * dt;
+    y += dy * dt;
+    color.a += Piece::DELTA_ALPHA * dt;
+
+    if (age() > lifetime / 2) {
+        dy = 0.0;
+        dx = 0.0;
+    }
+
+
+    const SDL_FPoint quad[VERT_COUNT] = { {0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0} };
+    const SDL_Color sdlcolor = color.as_sdl();
+    SDL_Vertex vert[VERT_COUNT];
+
+    for (int i = 0; i < VERT_COUNT; ++i) {
+        vert[i].color = sdlcolor;
+        vert[i].position.x = x + vertpos[i].x;
+        vert[i].position.y = y + vertpos[i].y;
+        vert[i].tex_coord = quad[i];
+    }
+
+    SDL_RenderGeometry(renderer, tex.raw(), vert, VERT_COUNT, nullptr, 0);
+}
+
+
+Mix_Chunk* Game::sounds[SoundEffects::COUNT];
 
 constexpr int TITLE_SPACE_ABOVE = 15;
 constexpr int TILE_SIZE = 32;
@@ -18,226 +303,6 @@ namespace Difficulty {
         { 0xF08000 },
         { 0xA03000 },
     };
-}
-
-
-Tile::Tile(Texture *tex) : Button(tex) {
-    setHidden(false);
-    setFlagged(false);
-    setMine(false);
-    row = 0;
-    col = 0;
-    isRed = false;
-}
-
-namespace TileSaveData {
-    enum {
-        HIDDEN = 1,
-        MINE = 2,
-        FLAGGED = 4,
-        RED = 8,
-        REMOVED = 16,
-
-        DEFAULT = HIDDEN,
-    };
-}
-
-Uint8 Tile::save() {
-    using namespace TileSaveData;
-    Uint8 data = 0;
-    if (isHidden())  data |= HIDDEN;
-    if (isMine())    data |= MINE;
-    if (isFlagged()) data |= FLAGGED;
-    if (isRed)       data |= RED;
-    if (removed)     data |= REMOVED;
-    return data;
-}
-
-void Tile::load(Uint8 data) {
-    using namespace TileSaveData;
-    setMine   (data & MINE);
-    setHidden (data & HIDDEN);
-    setFlagged(data & FLAGGED);
-    isRed =    data & RED;
-    removed =  data & REMOVED;
-}
-
-// No animations
-void Tile::forceUpdateTexture() {
-    if (removed) {
-        background = nullptr;
-        overlay = nullptr;
-    }
-    else if (isHidden()) {
-        background = &backgrounds[TileBG::HIDDEN];
-        if (isFlagged()) {
-            overlay = &overlays[TileOverlay::FLAG];
-        }
-    }
-    else {
-        background = &backgrounds[isRed ? TileBG::RED_SQUARE : TileBG::BLANK_SQUARE];
-        if (isMine()) {
-            overlay = &overlays[TileOverlay::MINE];
-        }
-        else {
-            overlay = &numbers[countTouchingMines()];
-        }
-    }
-    animState.kill();
-}
-
-int Tile::countTouchingMines() const {
-    int nearbyMines = 0;
-    foreach_touching_tile([&](Tile& tile) -> void {
-        if (tile.isMine()) {
-            nearbyMines += 1;
-        }
-    });
-
-    return nearbyMines;
-}
-
-enum TileAnim {
-    FLAG_ANIM = 1,
-    UNCOVER,
-    REVEALMINE,
-};
-
-
-void Tile::playFlagAnim() {
-    if (animState.active == TileAnim::FLAG_ANIM) return;
-
-    overlay = nullptr;
-    background = &backgrounds[TileBG::HIDDEN];
-
-    animState.start(TileAnim::FLAG_ANIM, new FlagAnim(&overlays[TileOverlay::FLAG], {x, y}, flagged),
-        [&overlay=overlay, overlays=overlays, &flagged=flagged] () {
-            if (flagged) overlay = &overlays[TileOverlay::FLAG];
-        }
-    );
-}
-
-void Tile::flag() {
-    setFlagged(true);
-    playFlagAnim();
-    game->updateFlagCount();
-}
-
-void Tile::unflag() {
-    setFlagged(false);
-    playFlagAnim();
-    game->updateFlagCount();
-}
-
-void Tile::mouseEnter() {
-    if (isHidden() && isUnflagged()) {
-        background = &backgrounds[TileBG::HIGHLIGHT];
-    }
-}
-
-void Tile::mouseLeave() {
-    if (background == &backgrounds[TileBG::HIGHLIGHT]) {
-        background = &backgrounds[TileBG::HIDDEN];
-    }
-}
-
-void Tile::reset() {
-    animState.kill();
-    setMine(false);
-    setFlagged(false);
-    setHidden(true);
-    background = &backgrounds[TileBG::HIDDEN];
-    overlay = nullptr;
-    isRed = false;
-    removed = false;
-}
-
-void Tile::red() {
-    isRed = true;
-    background = &backgrounds[TileBG::RED_SQUARE];
-}
-
-void Tile::dissapear() {
-    animState.start(-1, new WinTileAnim({x, y}, TILE_SIZE), [](){});
-    background = nullptr;
-    overlay = nullptr;
-    removed = true;
-}
-
-
-void Tile::flip(bool recurse, Uint32 delay) {
-    setHidden(false);
-    if (isMine()) {
-        overlay = nullptr;
-
-        animState.start(TileAnim::REVEALMINE, new MineRevealAnim({x,y}, TILE_SIZE), [](){}, delay);
-        animState.onstart = [this](){
-            overlay = &overlays[TileOverlay::MINE];
-            background = &backgrounds[TileBG::BLANK_SQUARE];
-        };
-    }
-    else {
-        int neighboringMines = countTouchingMines();
-
-        playUncoverAnim(delay);
-
-        if (recurse && neighboringMines == 0) {
-            // Recursively reveal surrounding tiles
-            foreach_touching_tile([&recurse, &delay](Tile& tile) {
-                if (tile.isHidden()) {
-                    tile.flip(recurse, delay += 100);
-                }
-            });
-        }
-    }
-}
-
-void Tile::playUncoverAnim(Uint32 delay) {
-        animState.start(TileAnim::UNCOVER,
-                new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng),
-                [](){}, delay
-        );
-
-        // Use onstart to set textures to account for `delay` parameter
-        animState.onstart = [this]() {
-            overlay = &numbers[countTouchingMines()];
-            background = &backgrounds[TileBG::BLANK_SQUARE];
-        };
-}
-
-void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals) const {
-    const int left = col - 1;
-    const int right = col + 1;
-    const int below = row + 1;
-    const int above = row - 1;
-
-    const bool spaceLeft = left >= 0;
-    const bool spaceRight = right < game->cols;
-    const bool spaceAbove = above >= 0;
-    const bool spaceBelow = below < game->rows;
-
-    auto& board = game->board;
-
-    if (spaceLeft) callback(board[row][left]);
-    if (spaceRight) callback(board[row][right]);
-    if (spaceAbove) callback(board[above][col]);
-    if (spaceBelow) callback(board[below][col]);
-
-    if (diagonals) {
-        if (spaceLeft && spaceAbove) callback(board[above][left]);
-        if (spaceRight && spaceAbove) callback(board[above][right]);
-        if (spaceLeft && spaceBelow) callback(board[below][left]);
-        if (spaceRight && spaceBelow) callback(board[below][right]);
-    }
-}
-
-void Tile::render() {
-    if (background)
-        background->render(x, y);
-
-    if (overlay != nullptr) {
-        overlay->render(x + (TILE_SIZE - overlay->getWidth()) / 2, y + (TILE_SIZE - overlay->getHeight()) / 2);
-    }
 }
 
 void Game::updateFlagCount() {
@@ -280,6 +345,11 @@ void Game::OnUpdate(double dt) {
 
 Game::~Game() {
     SDL_free(saveDirectory);
+    Tile::free();
+    for (int i = 0; i < SoundEffects::COUNT; ++i) {
+        Mix_FreeChunk(sounds[i]);
+        sounds[i] = nullptr;
+    }
 }
 
 Game::Game(SDL_Window *window) : Game(window, Difficulty::SIZES[1].rows, Difficulty::SIZES[1].cols) {}
@@ -454,6 +524,7 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
             } else {
                 currentHover->unflag();
             }
+            Mix_PlayChannel(-1, sounds[currentHover->isFlagged() ? SoundEffects::FLAG : SoundEffects::WHOOSH], 0);
         }
     }
     else if (e.button == SDL_BUTTON_LEFT) {
@@ -483,7 +554,7 @@ void Game::onLost(Tile& mine) {
     mine.red();
 
     animState.start(GameAnims::EXPLODE,
-                    new DetonationAnim(rng, {mine.x, mine.y}, TILE_SIZE),
+                    new DetonationAnim(Tile::backgrounds[TileBG::HIDDEN], rng, {mine.x, mine.y}, TILE_SIZE),
                    [this](){
         for (auto& row: board) for (Tile& tile : row) {
                 if (tile.isMine() && tile.isHidden() && tile.isUnflagged()) {
@@ -539,10 +610,17 @@ void Game::onWon() {
 void Game::onRevealTile(Tile& revealed) {
     if (revealed.isMine()) {
         onLost(revealed);
+        Mix_PlayChannel(-1, sounds[SoundEffects::EXPLODE], 0);
     }
     else if (hasWon()) {
         printf("Game won!\n");
         onWon();
+    }
+    else {
+        int channel = Mix_PlayChannel(-1, sounds[SoundEffects::BLIP], 0);
+        if (channel != -1) {
+            Mix_Volume(channel, 64);
+        }
     }
 }
 
@@ -682,60 +760,6 @@ void Game::generateMines() {
     updateFlagCount();
 }
 
-std::string TILE_FILES[] = {
-    /*[TileBG::BLANK_SQUARE] = */"images/square_blank.png",
-    /*[TileBG::HIDDEN] = */"images/tile.png",
-    /*[TileBG::HIGHLIGHT] = */"images/hovered_tile.png",
-    /*[TileBG::RED_SQUARE] = */"images/square_red.png",
-};
-
-std::string ICON_FILES[] = {
-    /*[TileOverlay::FLAG] = */"images/flag.png",
-    /*[TileOverlay::MINE] = */"images/mine.png",
-};
-
-
-const Color NUMBER_COLORS[] = {
-    0x000000, // Number 0 has no text!
-    0x1300d8,
-    0x02850e,
-    0xcb001e,
-    0x130e46,
-    0x003e14,
-    0x460202,
-    0x986207,
-    0x7100c7,
-};
-
-Texture Tile::backgrounds[TileBG::COUNT];
-Texture Tile::overlays[TileOverlay::COUNT];
-Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
-
-constexpr float NUMBER_SCALE = 0.8;
-
-
-void Tile::loadMedia(Font const& font) {
-    int w = TILE_SIZE;
-    int h = TILE_SIZE;
-    for (int i = 0; i < TileBG::COUNT; ++i) {
-        Tile::backgrounds[i].loadFile(TILE_FILES[i], w, h);
-    }
-
-    for (int i = 0; i < TileOverlay::COUNT; ++i) {
-        overlays[i].loadFile(ICON_FILES[i], w, h);
-    }
-    overlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
-
-    for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
-        const char num[] = {char(i + '0'), '\0'};
-
-        const Color color = NUMBER_COLORS[i];
-        numbers[i].loadText(font.raw(), num, color.as_sdl());
-        numbers[i].setScale(NUMBER_SCALE);
-    }
-
-}
-
 void Game::loadMedia() {
     title.load();
 
@@ -762,7 +786,13 @@ void Game::loadMedia() {
             btn.text.load();
             btn.setScale(0.4);
         }
+    }
 
+    for (int i = 0; i < SoundEffects::COUNT; ++i) {
+        sounds[i] = Mix_LoadWAV(SOUND_FILES[i].c_str());
+        if (sounds[i] == nullptr) {
+            throw std::runtime_error("Failed to load sound:" + std::string(Mix_GetError()));
+        }
     }
 }
 

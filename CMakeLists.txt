@@ -5,8 +5,13 @@ project (sdlminesweeper)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:\\mingw_dev\\lib")
 
 find_package(SDL2 REQUIRED)
-find_package(SDL2_ttf)
-find_package(SDL2_image)
+
+# These packages arent on UNIX
+if (WIN32)
+    find_package(SDL2_ttf)
+    find_package(SDL2_image)
+    find_package(SDL2_mixer)
+endif()
 
 set (CMAKE_CXX_STANDARD 17)
 
@@ -27,6 +32,7 @@ set( SOURCES
     src/text.cpp
     src/color.cpp
     src/font.cpp
+    src/tile.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
@@ -34,7 +40,7 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 
 if (UNIX)
     include_directories(${SDL2_INCLUDE_DIRS})
-    set(LIBS ${SDL2_LIBRARIES} SDL2_image SDL2_ttf)
+    set(LIBS ${SDL2_LIBRARIES} SDL2_image SDL2_ttf SDL2_mixer)
 
 elseif (WIN32)
     set (LIBS SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf)
