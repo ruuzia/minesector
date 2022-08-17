@@ -48,10 +48,11 @@ public:
     static Texture overlays[TileOverlay::COUNT];
     static Texture numbers[1 + NUMBER_TILES_COUNT];
     static void loadMedia(Font const& font);
+    static void reposition();
     static void free();
 
-    int getWidth() const override { return TILE_SIZE; }
-    int getHeight() const override { return TILE_SIZE; }
+    int getWidth() const override { return SIZE; }
+    int getHeight() const override { return SIZE; }
 
     Texture *overlay;
 
@@ -110,6 +111,7 @@ public:
     int col;
     AnimState animState;
 
+    static int SIZE;
 private:
     bool mine;
     bool hidden;
@@ -119,8 +121,6 @@ private:
     void playUncoverAnim(Uint32 delay);
 
     Game *game;
-
-    static constexpr int TILE_SIZE = 32;
 };
 
 

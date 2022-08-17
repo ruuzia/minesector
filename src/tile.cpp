@@ -159,7 +159,7 @@ bool UncoverAnim::OnUpdate(double dt) {
     rect.w = int(hidden->getWidth() * widthPercent);
     rect.h = int(hidden->getHeight() * heightPercent);
 
-    hidden->renderPart(pos.x, pos.y, &rect);
+    hidden->renderPart(pos.x, pos.y, &rect, true);
 
     return true;
 }
@@ -321,18 +321,19 @@ void Tile::red() {
 }
 
 void Tile::dissapear() {
-    animState.play(-1, new WinTileAnim({x, y}, TILE_SIZE));
+    animState.play(-1, new WinTileAnim({x, y}, SIZE));
     background = nullptr;
     overlay = nullptr;
     removed = true;
 }
 
+int Tile::SIZE = 32;
 
 void Tile::flip(bool recurse, Uint32 delay) {
     setHidden(false);
     if (isMine()) {
         overlay = nullptr;
-        auto anim = new MineRevealAnim({x,y}, TILE_SIZE);
+        auto anim = new MineRevealAnim({x,y}, SIZE);
         anim->onstart = [this](){
             overlay = &overlays[TileOverlay::MINE];
             background = &backgrounds[TileBG::BLANK_SQUARE];
@@ -401,7 +402,7 @@ void Tile::render() {
         background->render(x, y);
 
     if (overlay != nullptr) {
-        overlay->render(x + (TILE_SIZE - overlay->getWidth()) / 2, y + (TILE_SIZE - overlay->getHeight()) / 2);
+        overlay->render(x + (SIZE - overlay->getWidth()) / 2, y + (SIZE - overlay->getHeight()) / 2);
     }
 }
 
@@ -410,14 +411,12 @@ Texture Tile::overlays[TileOverlay::COUNT];
 Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
 
 void Tile::loadMedia(Font const& font) {
-    int w = TILE_SIZE;
-    int h = TILE_SIZE;
     for (int i = 0; i < TileBG::COUNT; ++i) {
-        Tile::backgrounds[i].loadFile(TILE_FILES[i], w, h);
+        Tile::backgrounds[i].loadFile(TILE_FILES[i]);
     }
 
     for (int i = 0; i < TileOverlay::COUNT; ++i) {
-        overlays[i].loadFile(ICON_FILES[i], w, h);
+        overlays[i].loadFile(ICON_FILES[i]);
     }
     overlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
 
@@ -426,7 +425,21 @@ void Tile::loadMedia(Font const& font) {
 
         const Color color = NUMBER_COLORS[i];
         numbers[i].loadText(font.raw(), num, color.as_sdl());
-        numbers[i].setScale(NUMBER_SCALE);
+    }
+
+    reposition();
+}
+
+void Tile::reposition() {
+    for (int i = 0; i < TileBG::COUNT; ++i) {
+        Tile::backgrounds[i].setSize(SIZE, SIZE);
+    }
+
+    for (int i = 0; i < TileOverlay::COUNT; ++i) {
+        overlays[i].setSize(SIZE, SIZE);
+    }
+    for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
+        numbers[i].setScale(NUMBER_SCALE * (SIZE / 32));
     }
 }
 

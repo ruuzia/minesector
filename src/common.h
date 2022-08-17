@@ -11,4 +11,7 @@
 // Global renderer!
 extern SDL_Renderer *renderer;
 
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+
 #endif

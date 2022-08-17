@@ -7,7 +7,7 @@
 namespace Detonation {
     namespace Particle {
         namespace Speed {
-            constexpr float MAX = 150.0;
+            constexpr float MAX = 150.0 / 32.0;
             constexpr float MIN = -MAX;
         }
         
@@ -31,8 +31,8 @@ namespace Detonation {
             constexpr float DELTA_ALPHA = -0.2;
 
             namespace Size {
-                constexpr float MIN = 6;
-                constexpr float MAX = 10;
+                constexpr float MIN = 6.0 / 32.0;
+                constexpr float MAX = 10.0 / 32.0;
             }
         }
 
@@ -40,7 +40,7 @@ namespace Detonation {
             constexpr float DELTA_ALPHA = -0.1;
 
             namespace Size {
-                constexpr float MAX = 15;
+                constexpr float MAX = 15.0 / 32.0;
             }
         }
     }
@@ -80,7 +80,6 @@ protected:
 public:
     int depth;
     DetonationParticle(std::mt19937& rng, float x, float y) : x(x), y(y) {
-
         born = SECONDS();
         using namespace Detonation::Particle;
         depth = std::uniform_int_distribution<>(Depth::MIN, Depth::MAX) (rng);
@@ -121,10 +120,12 @@ public:
         using random = std::uniform_real_distribution<>;
         using namespace Detonation::Particle;
 
-        dx = random{Speed::MIN, Speed::MAX} (rng);
-        dy = random(Speed::MIN, Speed::MAX) (rng);
+        float speedMin = Speed::MIN * Tile::SIZE;
+        float speedMax = Speed::MAX * Tile::SIZE;
+        dx = random{speedMin, speedMax} (rng);
+        dy = random(speedMin, speedMax) (rng);
         lifetime = random(Lifetime::MIN, Lifetime::MAX) (rng);
-        size = random(Ember::Size::MIN, Ember::Size::MAX) (rng);
+        size = random(Ember::Size::MIN * Tile::SIZE, Ember::Size::MAX * Tile::SIZE) (rng);
 
         color.g = std::uniform_real_distribution<>(Green::MIN, Green::MAX) (rng);
     }
@@ -234,8 +235,10 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
     using namespace Detonation::Particle;
 
     born = SECONDS();
-    dx = randreal( Speed::MIN, Speed::MAX) (rng);
-    dy = randreal( Speed::MIN, Speed::MAX) (rng);
+    float speedMin = Speed::MIN * Tile::SIZE;
+    float speedMax = Speed::MAX * Tile::SIZE;
+    dx = randreal( speedMin, speedMax) (rng);
+    dy = randreal( speedMin, speedMax) (rng);
 
     lifetime = randreal(Lifetime::MIN * 2, Lifetime::MAX * 2) (rng);
     color.g = randreal(Green::MIN, Green::MAX) (rng);
@@ -247,11 +250,12 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
     SDL_Point quadverts[QUAD_SIDES];
 
     double theta = 0;
+    float size = Piece::Size::MAX * Tile::SIZE;
     for (int i = 0; i < QUAD_SIDES; ++i) {
         theta = randreal(theta, 2*M_PI)(rng);
         //double r = randreal(15, 20)(rng);
-        quadverts[i].x = int(cos(theta) * Piece::Size::MAX);
-        quadverts[i].y = int(sin(theta) * Piece::Size::MAX);
+        quadverts[i].x = int(cos(theta) * size);
+        quadverts[i].y = int(sin(theta) * size);
     }
 
     // Convert quad to triangle vertices
@@ -265,6 +269,12 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
 
 void DestructionParticle::render(double dt) {
     using namespace Detonation::Particle;
+    if ((x < 0) || (x > SCREEN_WIDTH)) {
+        dx = -dx;
+    }
+    if ((y < 0) || (y > SCREEN_WIDTH)) {
+        dy = -dy;
+    }
     x += dx * dt;
     y += dy * dt;
     color.a += Piece::DELTA_ALPHA * dt;
@@ -292,8 +302,6 @@ void DestructionParticle::render(double dt) {
 
 Mix_Chunk* Game::sounds[SoundEffects::COUNT];
 
-constexpr int TITLE_SPACE_ABOVE = 15;
-constexpr int TILE_SIZE = 32;
 constexpr float PERCENT_MINES = 0.15;
 
 constexpr int STARTING_SAFE_COUNT = 15;
@@ -320,7 +328,7 @@ void Game::updateFlagCount() {
                         + " flags");
 
     flagCounter.load();
-    flagCounter.x = (screen_width - flagCounter.getWidth()) / 2;
+    //flagCounter.x = (SCREEN_WIDTH - flagCounter.getWidth()) / 2;
 }
 
 TextButton& Game::activeRestartButton() {
@@ -335,8 +343,6 @@ void Game::OnUpdate(double dt) {
     animState.update(dt);
 
     activeRestartButton().render();
-
-    title.render();
 
     flagCounter.render();
 
@@ -557,7 +563,7 @@ void Game::onLost(Tile& mine) {
 
     auto detonationAnim = new DetonationAnim {
         Tile::backgrounds[TileBG::HIDDEN],
-        rng, {mine.x, mine.y}, TILE_SIZE,
+        rng, {mine.x, mine.y}, Tile::SIZE,
     };
     animState.play(GameAnims::EXPLODE, detonationAnim);
 
@@ -764,9 +770,6 @@ void Game::generateMines() {
 }
 
 void Game::loadMedia() {
-    title.load();
-
-    flagCounter.setScale(0.4);
     updateFlagCount();
 
     Tile::loadMedia(mainFont);
@@ -786,8 +789,6 @@ void Game::loadMedia() {
             auto& btn = difficultyBtns[i];
             btn.text.setColor(Difficulty::COLORS[i]);
             btn.text.setString(Difficulty::STRINGS[i]);
-            btn.text.load();
-            btn.setScale(0.4);
         }
     }
 
@@ -800,64 +801,60 @@ void Game::loadMedia() {
 }
 
 void Game::positionItems() {
-    SDL_GetWindowSize(window, &screen_width, &screen_height);
-
     int y = 0;
 
-    // Title
-    y += TITLE_SPACE_ABOVE;
-    title.x = (screen_width - title.getWidth()) / 2; 
-    title.y = y;
-    y += title.getHeight() + 20;
-
-    // Flag count text
-    flagCounter.x = (screen_width - flagCounter.getWidth()) / 2;
-    flagCounter.y = y;
-    y += flagCounter.getHeight() + 20;
-
-    // Tiles
-    int x = (screen_width - cols*TILE_SIZE) / 2;
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
-            board[row][col].x = x + col * TILE_SIZE;
-            board[row][col].y = y + row * TILE_SIZE;
-        }
-    }
-    y += rows * TILE_SIZE;
-
-    // Play again and restart buttons
-    y += TILE_SIZE;
     restartBtn.text.setColor(Color(0xFF1000));
     restartBtn.text.setString("Restart!");
-    restartBtn.setScale(0.5);
+    restartBtn.setScale(0.3);
     restartBtn.load();
-    restartBtn.setCenterX(screen_width / 2);
-    restartBtn.setY(y);
-
     playAgainBtn.text.setColor(Color(0x00C000));
     playAgainBtn.text.setString("Play again?");
-    playAgainBtn.setScale(0.5);
+    playAgainBtn.setScale(0.3);
     playAgainBtn.load();
-    playAgainBtn.setCenterX(screen_width / 2);
+
+    y += playAgainBtn.getHeight() + 10;
+
+    // Tiles
+    //int x = (SCREEN_WIDTH - cols*Tile::SIZE) / 2;
+    Tile::SIZE = std::min((SCREEN_WIDTH) / cols, (SCREEN_HEIGHT - y) / rows);
+    int x = (SCREEN_WIDTH - cols*Tile::SIZE) / 2;
+    Tile::reposition();
+    for (int row = 0; row < rows; ++row) {
+        for (int col = 0; col < cols; ++col) {
+            board[row][col].x = x + col * Tile::SIZE;
+            board[row][col].y = y + row * Tile::SIZE;
+        }
+    }
+    y += rows * 32;//Tile::SIZE;
+
+
+    // Flag count text
+    flagCounter.setScale(0.4);
+    flagCounter.load();
+    flagCounter.x = x;
+    flagCounter.y = 10;
+
+
+    x += cols * Tile::SIZE;
+    y = 0;
+    for (auto it = difficultyBtns.rbegin(); it != difficultyBtns.rend(); ++it) {
+        it->setScale(0.3);
+        it->load();
+        x -= it->getWidth();
+        it->setX(x);
+        it->setY(y);
+    }
+
+    x -= std::max(playAgainBtn.getWidth(), restartBtn.getWidth());
+    restartBtn.setX(x);
+    restartBtn.setY(y);
+    playAgainBtn.setX(x);
     playAgainBtn.setY(y);
 
-    y += playAgainBtn.getHeight() + 20;
-
-    for (auto& btn : difficultyBtns) btn.setY(y);
 
 
-    difficultyBtns[1].setCenterX(screen_width / 2);
-
-    int midWidth = difficultyBtns[1].getWidth();
-
-    difficultyBtns[0].setCenterX((screen_width - midWidth - difficultyBtns[0].getWidth()) / 2 - 10);
-
-    difficultyBtns[2].setCenterX((screen_width + midWidth + difficultyBtns[2].getWidth()) / 2 + 10);
-
-    y += difficultyBtns[0].getHeight() + 20;
-
-    if (y > screen_height) {
-        SDL_SetWindowSize(window, screen_width, y);
+    if (false && y > SCREEN_HEIGHT) {
+        SDL_SetWindowSize(window, SCREEN_WIDTH, y);
     }
 }
 

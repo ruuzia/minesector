@@ -11,8 +11,8 @@
 #include "texture.h"
 #include "game.h"
 
-constexpr int SCREEN_WIDTH =  640 * 1.5;
-constexpr int SCREEN_HEIGHT = 480 * 1.5;
+int SCREEN_WIDTH =  640 * 1.5;
+int SCREEN_HEIGHT = 480 * 1.5;
 
 SDL_Renderer *renderer;
 
@@ -66,7 +66,7 @@ void SDL::init() {
         throw std::runtime_error("SDL_mixer count not initialize: " + std::string(Mix_GetError()));
     }
 
-    //SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+    SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 constexpr int FPS = 60;

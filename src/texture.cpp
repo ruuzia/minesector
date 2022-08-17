@@ -25,12 +25,17 @@ void Texture::render(int x, int y, SDL_Rect *clip, double angle, SDL_Point *cent
     SDL_RenderCopyEx(renderer, texture, clip, &dstrect, angle, center, flip);
 }
 
-void Texture::renderPart(int x, int y, const SDL_Rect *rect) const {
-    const SDL_Rect srcrect = { rect->x, rect->y, rect->w * (int) ((float)imgWidth / (float)width), rect->h * (int) ((float)imgHeight / (float)height) };
+void Texture::renderPart(int x, int y, const SDL_Rect *rect, bool stretchSource) const {
+    const SDL_Rect srcrect = {
+        rect->x,
+        rect->y,
+        rect->w * (int) ((float)imgWidth / (float)width),
+        rect->h * (int) ((float)imgHeight / (float)height),
+    };
 
     const SDL_Rect dstrect = { x + rect->x, y + rect->y, rect->w, rect->h };
 
-    SDL_RenderCopy(renderer, texture, &srcrect, &dstrect);
+    SDL_RenderCopy(renderer, texture, stretchSource ? NULL : &srcrect, &dstrect);
 }
 
 void Texture::free() {

@@ -32,7 +32,7 @@ public:
     // Render at a point on screen
     void render(int x, int y, SDL_Rect *clip = nullptr, double angle = 0.0, SDL_Point *center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE) const;
 
-    void renderPart(int x, int y, const SDL_Rect *rect) const;
+    void renderPart(int x, int y, const SDL_Rect *rect, bool = true) const;
 
     [[nodiscard]] int getWidth() const { return width; }
     [[nodiscard]] int getHeight() const { return height; }

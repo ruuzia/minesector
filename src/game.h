@@ -75,7 +75,6 @@ public:
 private:
     SDL_Window *window;
 
-    int screen_width, screen_height;
     Text title;
     Text flagCounter;
     TextButton restartBtn;

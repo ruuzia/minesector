@@ -77,10 +77,10 @@ public:
         scale = scale_;
         text.setScale(scale);
     }
+    int borderWidth;
 private:
     double scale;
     SDL_Color bgcolor;
-    int borderWidth;
 };
 
 #endif
