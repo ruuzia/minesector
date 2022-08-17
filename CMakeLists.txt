@@ -43,7 +43,7 @@ if (UNIX)
     set(LIBS ${SDL2_LIBRARIES} SDL2_image SDL2_ttf SDL2_mixer)
 
 elseif (WIN32)
-    set (LIBS SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf)
+    set (LIBS SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf SDL2_mixer::SDL2_mixer)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-subsystem,windows")
 endif()
 
