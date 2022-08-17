@@ -21,11 +21,11 @@ enum GameState {
 
 namespace SoundEffects {
     enum {
-        FLAG = 0,
-        WHOOSH,
-        BLIP,
-        EXPLODE,
-        COUNT,
+        FLAG    = 0,
+        WHOOSH  = 1,
+        BLIP    = 2,
+        EXPLODE = 3,
+        COUNT   = 4,
     };
 }
 

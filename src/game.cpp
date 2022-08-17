@@ -52,6 +52,11 @@ namespace Detonation {
     }
 }
 
+constexpr int VERT_COUNT = 6;
+
+constexpr Uint32 MINE_REVEAL_MILLISECONDS = 5000;
+constexpr Uint32 FLIP_DELAY = 100;
+
 std::string SOUND_FILES[SoundEffects::COUNT] {
     "sounds/flag.wav",
     "sounds/whoosh.wav",
@@ -59,7 +64,6 @@ std::string SOUND_FILES[SoundEffects::COUNT] {
     "sounds/explode.wav",
 };
 
-constexpr int VERT_COUNT = 6;
 
 
 class DetonationParticle {
@@ -244,7 +248,7 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
 
     double theta = 0;
     for (int i = 0; i < QUAD_SIDES; ++i) {
-        theta = randreal(theta, 2 * M_PI)(rng);
+        theta = randreal(theta, 2*M_PI)(rng);
         //double r = randreal(15, 20)(rng);
         quadverts[i].x = int(cos(theta) * Piece::Size::MAX);
         quadverts[i].y = int(sin(theta) * Piece::Size::MAX);
@@ -421,7 +425,6 @@ void Game::ready() {
 namespace Save {
     char HEADER[] = "MINE ";
     const char *FILE = "data.bin";
-    size_t DATA_BUFFER = 1028;
 }
 
 void Game::save() {
@@ -552,9 +555,11 @@ void Game::onLost(Tile& mine) {
     mine.animState.kill();
     mine.red();
 
-    animState.start(GameAnims::EXPLODE,
-                    new DetonationAnim(Tile::backgrounds[TileBG::HIDDEN], rng, {mine.x, mine.y}, TILE_SIZE),
-                   [](){});
+    auto detonationAnim = new DetonationAnim {
+        Tile::backgrounds[TileBG::HIDDEN],
+        rng, {mine.x, mine.y}, TILE_SIZE,
+    };
+    animState.play(GameAnims::EXPLODE, detonationAnim);
 
     std::vector<Tile *> mines;
     double delay = 0;
@@ -576,16 +581,16 @@ void Game::onLost(Tile& mine) {
             return aDistSq < bDistSq;
     });
 
-    const double deltaDelay = 5.0 / mines.size();
+    const Uint32 deltaDelay = MINE_REVEAL_MILLISECONDS / mines.size();
 
     // Skip first item, the detonated mine
     for (auto it = mines.begin() + 1; it != mines.end(); ++it) {
-        (*it)->flip(false, (Uint32)(delay*1000));
+        (*it)->flip(false, delay);
         delay += deltaDelay;
     }
 
     // When the last mine is revealed, mark all incorrect flags
-    mines.back()->animState.onstart = [this]() {
+    mines.back()->animState.anim->onstart = [this]() {
         for (auto& row: board) for (Tile& tile : row) {
             if (tile.isSafe() && tile.isFlagged()) {
                 // Incorrect flag
@@ -712,7 +717,7 @@ void Game::generateStartingArea(Tile& root) {
     Uint32 delay = 0;
     for (auto& tile : toreveal) {
         tile->flip(true, delay);
-        delay += 100;
+        delay += FLIP_DELAY;
     }
 
     onRevealTile(root);

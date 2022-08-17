@@ -6,16 +6,18 @@ namespace MineReveal {
     constexpr double FINISHED_ALPHA = 0.3;
 }
 
+Anim::Anim() {
+    onstart = nullptr;
+    onfinish = nullptr;
+}
 
 AnimState::AnimState() {
     active = false;
     anim.reset();
     //anim.reset();
-    onstart = nullptr;
-    onfinish = nullptr;
 }
 
-void AnimState::start(int code, Anim* anim_, callback onfinish, Uint32 delay) {
+Anim& AnimState::play(int code, Anim* anim_, Uint32 delay) {
     // Destroy any already active anim
     kill();
     anim.reset(anim_);
@@ -23,7 +25,8 @@ void AnimState::start(int code, Anim* anim_, callback onfinish, Uint32 delay) {
     active = code;
     started = false;
     startTime = SDL_GetTicks() + delay;
-    this->onfinish = onfinish;
+
+    return *anim;
 }
 
 bool AnimState::isAnimActive(int code) {
@@ -33,15 +36,13 @@ bool AnimState::isAnimActive(int code) {
 
 void AnimState::kill() {
     if (anim) {
-        active = 0;
-        anim.reset();
-
         // Currently, onstart and onfinish are guaranteed to be called,
         // even if the animation isn't able to start or finish
-        if (not started && onstart) onstart();
-        onstart = nullptr;
-        if (onfinish) onfinish();
-        onfinish = nullptr;
+        if (not started && anim->onstart) anim->onstart();
+        if (anim->onfinish) anim->onfinish();
+
+        active = 0;
+        anim.reset();
     }
 }
 
@@ -52,7 +53,7 @@ void AnimState::update(double dt) {
         if (SDL_GetTicks() >= startTime) {
             started = true;
             anim->OnStart();
-            if (onstart) { onstart(); }
+            if (anim->onstart) { anim->onstart(); }
         }
     }
     else if (!anim->OnUpdate(dt)) {

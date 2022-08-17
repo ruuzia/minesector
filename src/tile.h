@@ -13,27 +13,27 @@
 namespace TileBG {
     enum {
         BLANK_SQUARE = 0,
-        HIDDEN,
-        HIGHLIGHT,
-        RED_SQUARE,
-        COUNT,
+        HIDDEN       = 1,
+        HIGHLIGHT    = 2,
+        RED_SQUARE   = 3,
+        COUNT        = 4,
     };
 }
 
 namespace TileOverlay {
     enum {
-        FLAG = 0,
-        MINE,
-        COUNT,
+        FLAG  = 0,
+        MINE  = 1,
+        COUNT = 2,
     };
 }
 
 namespace TileSaveData {
     enum {
-        HIDDEN = 1,
-        MINE = 2,
+        HIDDEN  = 1,
+        MINE    = 2,
         FLAGGED = 4,
-        RED = 8,
+        RED     = 8,
         REMOVED = 16,
 
         DEFAULT = HIDDEN,

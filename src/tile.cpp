@@ -273,12 +273,11 @@ void Tile::playFlagAnim() {
 
     overlay = nullptr;
     background = &backgrounds[TileBG::HIDDEN];
-
-    animState.start(TileAnim::FLAG_ANIM, new FlagAnim(&overlays[TileOverlay::FLAG], {x, y}, flagged),
-        [this] () {
-            if (flagged) overlay = &overlays[TileOverlay::FLAG];
-        }
-    );
+    auto flagAnim = new FlagAnim(&overlays[TileOverlay::FLAG], {x, y}, flagged);
+    flagAnim->onfinish = [this] () {
+        if (flagged) overlay = &overlays[TileOverlay::FLAG];
+    };
+    animState.play(TileAnim::FLAG_ANIM, flagAnim);
 }
 
 void Tile::flag() {
@@ -322,7 +321,7 @@ void Tile::red() {
 }
 
 void Tile::dissapear() {
-    animState.start(-1, new WinTileAnim({x, y}, TILE_SIZE), [](){});
+    animState.play(-1, new WinTileAnim({x, y}, TILE_SIZE));
     background = nullptr;
     overlay = nullptr;
     removed = true;
@@ -333,12 +332,12 @@ void Tile::flip(bool recurse, Uint32 delay) {
     setHidden(false);
     if (isMine()) {
         overlay = nullptr;
-
-        animState.start(TileAnim::REVEALMINE, new MineRevealAnim({x,y}, TILE_SIZE), [](){}, delay);
-        animState.onstart = [this](){
+        auto anim = new MineRevealAnim({x,y}, TILE_SIZE);
+        anim->onstart = [this](){
             overlay = &overlays[TileOverlay::MINE];
             background = &backgrounds[TileBG::BLANK_SQUARE];
         };
+        animState.play(TileAnim::REVEALMINE, anim, delay);
     }
     else {
         int neighboringMines = countTouchingMines();
@@ -357,17 +356,16 @@ void Tile::flip(bool recurse, Uint32 delay) {
 }
 
 void Tile::playUncoverAnim(Uint32 delay) {
-    animState.start(TileAnim::UNCOVER,
-            new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng),
-            [](){}, delay
-            );
-
+    auto uncoverAnim = new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng);
     // Use onstart to set textures to account for `delay` parameter
-    animState.onstart = [this]() {
+    uncoverAnim->onstart = [this]() {
         //Mix_PlayChannel(-1, game->sounds[SoundEffects::SHOVEL], 0);
         overlay = &numbers[countTouchingMines()];
         background = &backgrounds[TileBG::BLANK_SQUARE];
     };
+
+    animState.play(TileAnim::UNCOVER, uncoverAnim, delay);
+
 }
 
 void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals) const {

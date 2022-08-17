@@ -11,10 +11,14 @@ typedef std::function<void()> callback;
 
 class Anim {
 public:
+    Anim();
     virtual ~Anim() = default;
 
     virtual void OnStart() = 0;
     virtual bool OnUpdate(double dt) = 0;
+
+    callback onstart;
+    callback onfinish;
 };
 
 class AnimState {
@@ -22,7 +26,7 @@ public:
     AnimState();
 
     void update(double dt);
-    void start(int code, Anim* anim, callback onfinish, Uint32 delay = 0);
+    Anim& play(int code, Anim* anim, Uint32 delay = 0);
     void kill();
     Uint32 runningTime() {
         return SDL_GetTicks() - startTime;
@@ -31,14 +35,12 @@ public:
     bool isAnimActive(int code);
 
     Uint64 current;
-    callback onstart;
+    std::unique_ptr<Anim> anim;
+
 private:
     int active;
     bool started;
     Uint32 startTime;
-    callback onfinish;
-
-    std::unique_ptr<Anim> anim;
 };
 
 class MineRevealAnim : public Anim {
