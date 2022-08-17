@@ -3,9 +3,6 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 
-#define OK true
-#define FAIL false
-
 Texture::Texture() {
     texture = nullptr;
     width = 0;

@@ -1,7 +1,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 #include "SDL_pixels.h"
-#include "common.h"
+#include "app.h"
 
 // Use with hexadecimal literals for hex colors
 // Eg. HEX(0xFA8005) -> 0xFA, 0x80, 0x05

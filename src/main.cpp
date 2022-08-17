@@ -1,3 +1,5 @@
+#include "app.h"
+
 // I need this on Windows for some reason
 #define SDL_MAIN_HANDLED
 
@@ -5,24 +7,23 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
-
 #include <cstdio>
 
 #include "texture.h"
 #include "game.h"
 
-int SCREEN_WIDTH =  640 * 1.5;
-int SCREEN_HEIGHT = 480 * 1.5;
+constexpr int SCREEN_WIDTH  = 640 * 1.5;
+constexpr int SCREEN_HEIGHT = 480 * 1.5;
 
 SDL_Renderer *renderer;
 
-class SDL {
-public:
-    SDL() {
-        window = nullptr;
-        renderer = nullptr;
-    }
-    ~SDL() {
+App::App() {
+    window = nullptr;
+    renderer = nullptr;
+    isFullscreen = false;
+}
+
+App::~App() {
         SDL_DestroyRenderer(renderer);
         renderer = nullptr;
 
@@ -32,13 +33,9 @@ public:
         IMG_Quit();
         TTF_Quit();
         SDL_Quit();
-    }
+}
 
-    void init();
-    SDL_Window *window;
-};
-
-void SDL::init() {
+void App::init() {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error("SDL could not initialize! SDL Error: " + std::string(SDL_GetError()));
     }
@@ -88,7 +85,7 @@ static int event_filter(void *game, SDL_Event *e) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_RenderClear(renderer);
                 
-            static_cast<Game *>(game)->positionItems();
+            //static_cast<Game *>(game)->positionItems();
             static_cast<Game *>(game)->OnUpdate(dt);
 
             SDL_RenderPresent(renderer);
@@ -125,6 +122,17 @@ static bool Update(Game &game, double dt) {
             else if (e.key.keysym.sym == SDLK_t) {
                 printf("dt: %f\n", dt);
             }
+            else if (e.key.keysym.sym == SDLK_F11) {
+                if (Sim.isFullscreen) {
+                    Sim.isFullscreen = false;
+                    SDL_SetWindowFullscreen(Sim.window, 0);
+                    SDL_SetWindowSize(Sim.window, SCREEN_WIDTH, SCREEN_HEIGHT);
+                }
+                else {
+                    Sim.isFullscreen = true;
+                    SDL_SetWindowFullscreen(Sim.window, SDL_WINDOW_FULLSCREEN);
+                }
+            }
             break;
         
         case SDL_MOUSEBUTTONDOWN:
@@ -157,11 +165,11 @@ static bool Update(Game &game, double dt) {
     return true;
 }
 
-int main(void) {
-    SDL sdl;
+App Sim;
 
+int main(void) {
     try {
-        sdl.init();
+        Sim.init();
     }
     catch (const std::runtime_error& ex) {
         printf("Failed to initialize SDL.\n%s\n", ex.what());
@@ -171,7 +179,7 @@ int main(void) {
 
     try {
         //loadMedia(sdl, game);
-        Game game(sdl.window);
+        Game game(Sim.window);
         bool running = true;
         lastFrame = SDL_GetTicks();
         game.OnStart();

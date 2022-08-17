@@ -1,6 +1,6 @@
 #include <string>
 #include <algorithm>
-#include "common.h"
+#include "app.h"
 #include "game.h"
 #include "color.h"
 

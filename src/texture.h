@@ -7,7 +7,7 @@
 #include "SDL_ttf.h"
 #include "SDL_image.h"
 
-#include "common.h"
+#include "app.h"
 
 
 class Texture
