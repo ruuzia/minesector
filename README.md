@@ -1,6 +1,8 @@
 ## Minesweeper
 
-Classic Minesweeper with I suppose some neatish effects.
+Pretty classic Minesweeper.
+
+![game](example.png)
 
 This uses only [SDL](https://www.libsdl.org/) and extension libraries [SDL_image](https://wiki.libsdl.org/SDL_image/), [SDL_ttf](https://wiki.libsdl.org/SDL_ttf/), and [SDL_mixer](https://wiki.libsdl.org/SDL_mixer/).
 
