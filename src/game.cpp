@@ -376,10 +376,12 @@ Game::Game(SDL_Window *window, int rows, int cols)
     , flagCounter(&mainFont, "0/? flags", 0xA00000)
     , restartBtn(&mainFont, "Restart!", 0xFF1000)
     , playAgainBtn(&mainFont, "Play again?", 0x00C000)
+    , rng(std::random_device{}())
+    , currentHover(nullptr)
+    , activeBtn(-1)
 {
     currentHover = nullptr;
     activeBtn = -1;
-    rng.seed(std::random_device{}());
 
     saveDirectory = SDL_GetPrefPath("grassdne", "sdlminesweeper");
     if (saveDirectory == NULL) {
