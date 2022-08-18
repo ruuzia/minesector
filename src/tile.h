@@ -85,8 +85,8 @@ public:
     void flip(bool flipNeighbors = true, Uint32 delay = 0);
     void reset();
     void red();
-    void mouseEnter();
-    void mouseLeave();
+    void mouseEnter() override;
+    void mouseLeave() override;
     void dissapear();
 
     void OnUpdate(double dt) {

@@ -332,6 +332,7 @@ void Game::updateFlagCount() {
 }
 
 TextButton& Game::activeRestartButton() {
+    return restartBtn;
     return (state & GameState::OVER) ? playAgainBtn : restartBtn;
 }
 
@@ -342,14 +343,11 @@ void Game::OnUpdate(double dt) {
 
     animState.update(dt);
 
-    activeRestartButton().render();
-
-    flagCounter.render();
-
-    for (auto& btn : difficultyBtns) {
-        btn.render();
+    for (auto btn : buttons) {
+        if (!btn->hidden) {
+            btn->render();
+        }
     }
-
 }
 
 Game::~Game() {
@@ -374,6 +372,7 @@ Game::Game(SDL_Window *window, int rows, int cols)
     , playAgainBtn(&mainFont, "Play again?", 0x00C000)
 {
     currentHover = nullptr;
+    activeBtn = -1;
     rng.seed(std::random_device{}());
 
     saveDirectory = SDL_GetPrefPath("grassdne", "sdlminesweeper");
@@ -508,6 +507,8 @@ void Game::resizeBoard() {
 }
 
 void Game::restartGame() {
+    playAgainBtn.hidden = true;
+    restartBtn.hidden = false;
     ready();
 }
 
@@ -631,6 +632,11 @@ void Game::onRevealTile(Tile& revealed) {
             Mix_Volume(channel, 64);
         }
     }
+
+    if (state & GameState::OVER) {
+        playAgainBtn.hidden = false;
+        restartBtn.hidden = true;
+    }
 }
 
 void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
@@ -638,28 +644,45 @@ void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
 
 }
 
-void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
-    if (state & GameState::OVER) {
-        if (currentHover) currentHover->mouseLeave();
-        currentHover = nullptr;
-        return;
-    }
-    bool overTile = false;
-    for (int r = 0; r < rows; ++r) {
-        for (int c = 0; c < cols; ++c) {
-            if (board[r][c].isMouseOver(e.x, e.y)) {
-                overTile = true;
-
-                if (currentHover) currentHover->mouseLeave();
-                (currentHover = &board[r][c])->mouseEnter();
-
-                break;
+Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
+    for (int r = 0; r < self.rows; ++r) {
+        for (int c = 0; c < self.cols; ++c) {
+            if (self.board[r][c].isMouseOver(mouseX, mouseY)) {
+                return &self.board[r][c];
             }
         }
     }
-    if (!overTile && currentHover != nullptr) {
-        currentHover->mouseLeave();
+    return nullptr;
+}
+
+void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
+    if (state & GameState::OVER) {
+        // Can't select tiles when game is over
+        if (currentHover) currentHover->mouseLeave();
         currentHover = nullptr;
+    }
+    else if (currentHover == nullptr || !currentHover->isMouseOver(e.x, e.y)) {
+        if (currentHover) currentHover->mouseLeave();
+        
+        Tile *tile = getTileUnderMouse(*this, e.x, e.y);
+        if (tile) tile->mouseEnter();
+        currentHover = tile;
+    }
+
+    if (activeBtn != -1 && !buttons[activeBtn]->isMouseOver(e.x, e.y)) {
+        // Active button is no longer under mouse
+        buttons[activeBtn]->mouseLeave();
+        activeBtn = -1;
+    }
+
+    if (!currentHover && activeBtn <  0) {
+        for (int i = 0; i < (int)buttons.size(); ++i) {
+            if (!buttons[i]->hidden && buttons[i]->isMouseOver(e.x, e.y)) {
+                buttons[i]->mouseEnter();
+                activeBtn = i;
+                break;
+            }
+        }
     }
 }
 
@@ -779,6 +802,7 @@ void Game::loadMedia() {
 
     playAgainBtn.setScale(0.5);
     playAgainBtn.load();
+    playAgainBtn.hidden = true;
 
     {
 
@@ -798,6 +822,11 @@ void Game::loadMedia() {
             throw std::runtime_error("Failed to load sound:" + std::string(Mix_GetError()));
         }
     }
+
+    buttons.push_back(&restartBtn);
+    buttons.push_back(&playAgainBtn);
+    for (auto& btn : difficultyBtns) buttons.push_back(&btn);
+
 }
 
 void Game::positionItems() {

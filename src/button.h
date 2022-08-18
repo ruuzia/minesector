@@ -18,6 +18,9 @@ public:
 
     bool isMouseOver(int mouseX, int mouseY) const;
 
+    virtual void mouseEnter() {}
+    virtual void mouseLeave() {}
+
     std::function<void()> onclick;
 
     virtual void render()  {
@@ -29,6 +32,8 @@ public:
 
     // Just leaving position public for now
     int x, y;
+
+    bool hidden;
 private:
 };
 
@@ -38,11 +43,14 @@ public:
     TextButton(Font const* font = nullptr, std::string string = "", Color color = {0.f, 0.f, 0.f});
     ~TextButton();
 
-    void render();
+    void render() override;
     void load();
 
-    int getWidth() const;
-    int getHeight() const;
+    int getWidth() const override;
+    int getHeight() const override;
+
+    void mouseEnter() override;
+    void mouseLeave() override;
 
     void setY(int y_) {
         y = y_;
@@ -80,7 +88,9 @@ public:
     int borderWidth;
 private:
     double scale;
-    SDL_Color bgcolor;
+    Color bgcolor;
+    Color hoverbg;
+    bool active;
 };
 
 #endif

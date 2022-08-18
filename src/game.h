@@ -81,6 +81,9 @@ private:
     TextButton playAgainBtn;
     std::vector<TextButton> difficultyBtns;
 
+    std::vector<Button*> buttons;
+    int activeBtn;
+
     TextButton& activeRestartButton();
 
     void ready();

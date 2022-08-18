@@ -1,7 +1,8 @@
 #include "button.h"
 #include "color.h"
 
-Button::Button(Texture *tex) : background(tex) {
+Button::Button(Texture *tex) : background(tex), hidden(false) {
+    hidden = false;
 }
 
 Button::~Button() {}
@@ -24,10 +25,16 @@ bool Button::isMouseOver(int mouseX, int mouseY) const {
 }
 
 
-TextButton::TextButton(Font const* font, std::string string, Color color) : Button(), text(font, string, color) {
+TextButton::TextButton(Font const* font, std::string string, Color color)
+    : Button()
+    , text(font, string, color)
+    , bgcolor(0xF0F0F0, 0.85)
+    , hoverbg(0xFFFFFF, 0.95)
+{
     scale = 1.0;
     borderWidth = 15;
-    bgcolor = {HEX(0xF0F0F0), 0xE0};
+    active = false;
+    hidden = false;
 }
 
 int TextButton::getWidth() const {
@@ -50,7 +57,7 @@ void TextButton::render() {
     if (!text.loaded) {
         load();
     }
-    SDL_SetRenderDrawColor(renderer, bgcolor.r, bgcolor.g, bgcolor.b, bgcolor.a);
+    (active ? hoverbg : bgcolor).draw();
     SDL_Rect fillRect = {
         x, y,
         text.getWidth() + 2 * borderWidth,
@@ -58,5 +65,12 @@ void TextButton::render() {
     };
     SDL_RenderFillRect(renderer, &fillRect);
     text.render();
+}
+
+void TextButton::mouseEnter() {
+    active = true;
+}
+void TextButton::mouseLeave() {
+    active = false;
 }
 
