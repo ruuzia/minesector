@@ -335,11 +335,6 @@ void Game::updateFlagCount() {
     //flagCounter.x = (SCREEN_WIDTH - flagCounter.getWidth()) / 2;
 }
 
-TextButton& Game::activeRestartButton() {
-    return restartBtn;
-    return (state & GameState::OVER) ? playAgainBtn : restartBtn;
-}
-
 void Game::OnUpdate(double dt) {
     for (auto& row : board) for (Tile& tile : row) {
         tile.OnUpdate(dt);
@@ -365,24 +360,20 @@ Game::~Game() {
     }
 }
 
-Game::Game(SDL_Window *window) : Game(window, Difficulty::SIZES[1].rows, Difficulty::SIZES[1].cols) {}
-
-Game::Game(SDL_Window *window, int rows, int cols)
-    : rows(rows)
-    , cols(cols)
+Game::Game(SDL_Window *window)
+    : rows(Difficulty::SIZES[1].rows)
+    , cols(Difficulty::SIZES[1].cols)
+    , board(rows, std::vector<Tile>(cols))
+    , rng(std::random_device{}())
     , mainFont("fonts/Arbutus-Regular.ttf")
     , window(window)
     , title(&mainFont, "Minesweeper")
     , flagCounter(&mainFont, "0/? flags", 0xA00000)
     , restartBtn(&mainFont, "Restart!", 0xFF1000)
     , playAgainBtn(&mainFont, "Play again?", 0x00C000)
-    , rng(std::random_device{}())
     , currentHover(nullptr)
     , activeBtn(-1)
 {
-    currentHover = nullptr;
-    activeBtn = -1;
-
     saveDirectory = SDL_GetPrefPath("grassdne", "sdlminesweeper");
     if (saveDirectory == NULL) {
         printf("Error getting save directory: %s", SDL_GetError());
@@ -396,7 +387,6 @@ void Game::OnStart() {
     load();
     int loadedState = state;
 
-    board.resize(rows, std::vector<Tile>(cols));
     ready();
 
     if (!tileDatas.empty()) {

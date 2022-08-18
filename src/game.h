@@ -34,7 +34,6 @@ namespace SoundEffects {
 
 class Game {
 public:
-    Game(SDL_Window *window, int rows, int cols);
     Game(SDL_Window *window);
     ~Game();
 
@@ -82,7 +81,6 @@ private:
     std::vector<TextButton> difficultyBtns;
 
     std::vector<Button*> buttons;
-    int activeBtn;
 
     TextButton& activeRestartButton();
 
@@ -98,12 +96,10 @@ private:
 
     void onRevealTile(Tile& tile);
 
-
     std::vector<Uint8> tileDatas;
 
-
     Tile *currentHover;
-
+    int activeBtn;
 };
 
 #endif
