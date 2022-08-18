@@ -77,9 +77,13 @@ protected:
     
     double born;
 
+    SDL_Rect& field;
+
 public:
     int depth;
-    DetonationParticle(std::mt19937& rng, float x, float y) : x(x), y(y) {
+    DetonationParticle(std::mt19937& rng, float x, float y, SDL_Rect &field)
+        : x(x), y(y), field(field)
+    {
         born = SECONDS();
         using namespace Detonation::Particle;
         depth = std::uniform_int_distribution<>(Depth::MIN, Depth::MAX) (rng);
@@ -99,7 +103,7 @@ public:
 
 class DestructionParticle : public DetonationParticle {
 public:
-    DestructionParticle(Texture &tex, std::mt19937& rng, int x=0, int y=0);
+    DestructionParticle(Texture &tex, std::mt19937& rng, int x, int y, SDL_Rect &field);
     ~DestructionParticle() override = default;
 
     void render(double dt) override;
@@ -114,8 +118,8 @@ private:
 
 class EmberParticle : public DetonationParticle {
 public:
-    EmberParticle(std::mt19937& rng, int x=0, int y=0)
-        : DetonationParticle(rng, x, y)
+    EmberParticle(std::mt19937& rng, int x, int y, SDL_Rect &field)
+        : DetonationParticle(rng, x, y, field)
     {
         using random = std::uniform_real_distribution<>;
         using namespace Detonation::Particle;
@@ -154,7 +158,7 @@ private:
 
 class DetonationAnim : public Anim {
 public:
-    DetonationAnim(Texture &tex, std::mt19937& rng, SDL_Point pos, int size);
+    DetonationAnim(Texture &tex, std::mt19937& rng, SDL_Point pos, SDL_Rect field);
     ~DetonationAnim() override = default;
 
     void OnStart() override;
@@ -162,23 +166,23 @@ public:
 
 private:
     SDL_Point pos;
+    Texture &tex;
+    std::mt19937& rng;
+    SDL_Rect field;
     std::vector<std::unique_ptr<DetonationParticle>> particles;
 
     double startTime;
-
-    Texture &tex;
-    std::mt19937& rng;
 
     void emitParticle(std::unique_ptr<DetonationParticle> part);
 };
 
 
-DetonationAnim::DetonationAnim(Texture &tex, std::mt19937& rng, SDL_Point tilePos, int size)
-    : tex(tex), rng(rng)
+DetonationAnim::DetonationAnim(Texture &tex, std::mt19937& rng, SDL_Point tilePos, SDL_Rect field)
+    : tex(tex), rng(rng), field(field)
 {
     // Center of tile
-    pos.x = tilePos.x + size / 2;
-    pos.y = tilePos.y + size / 2;
+    pos.x = tilePos.x + Tile::SIZE / 2;
+    pos.y = tilePos.y + Tile::SIZE / 2;
 }
 
 void DetonationAnim::OnStart() {
@@ -205,10 +209,10 @@ bool DetonationAnim::OnUpdate(double dt) {
             for (int i = 0; i < Emitter::COUNT; ++i) {
                 //particles.emplace_back(tex, rng, pos.x, pos.y);
                 if (std::uniform_real_distribution<>(0.0, 1.0)(rng) < 0.5) {
-                    emitParticle(std::make_unique<DestructionParticle>(tex, rng, pos.x, pos.y));
+                    emitParticle(std::make_unique<DestructionParticle>(tex, rng, pos.x, pos.y, field));
                 }
                 else {
-                    emitParticle(std::make_unique<EmberParticle>(rng, pos.x, pos.y));
+                    emitParticle(std::make_unique<EmberParticle>(rng, pos.x, pos.y, field));
                 }
             }
         }
@@ -228,8 +232,8 @@ bool DetonationAnim::OnUpdate(double dt) {
     return rendering;
 }
 
-DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x, int y)
-    : DetonationParticle(rng, x, y), tex(tex)
+DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x, int y, SDL_Rect &field)
+    : DetonationParticle(rng, x, y, field), tex(tex)
 {
     using randreal = std::uniform_real_distribution<>;
     using namespace Detonation::Particle;
@@ -269,10 +273,10 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
 
 void DestructionParticle::render(double dt) {
     using namespace Detonation::Particle;
-    if ((x < 0) || (x > SCREEN_WIDTH)) {
+    if ((x < field.x) || (x > field.x + field.w)) {
         dx = -dx;
     }
-    if ((y < 0) || (y > SCREEN_WIDTH)) {
+    if ((y < field.y) || (y > field.y + field.h)) {
         dy = -dy;
     }
     x += dx * dt;
@@ -348,6 +352,8 @@ void Game::OnUpdate(double dt) {
             btn->render();
         }
     }
+
+    flagCounter.render();
 }
 
 Game::~Game() {
@@ -537,14 +543,9 @@ void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
         }
     }
     else if (e.button == SDL_BUTTON_LEFT) {
-        if (activeRestartButton().isMouseOver(e.x, e.y)) {
-            return restartGame();
-        }
-        for (size_t i = 0; i < difficultyBtns.size(); ++i) {
-            if (difficultyBtns[i].isMouseOver(e.x, e.y)) {
-                rows = Difficulty::SIZES[i].rows;
-                cols = Difficulty::SIZES[i].cols;
-                resizeBoard();
+        for (auto btn : buttons) {
+            if (btn->onclick && btn->isMouseOver(e.x, e.y)) {
+                btn->onclick();
                 return;
             }
         }
@@ -564,7 +565,8 @@ void Game::onLost(Tile& mine) {
 
     auto detonationAnim = new DetonationAnim {
         Tile::backgrounds[TileBG::HIDDEN],
-        rng, {mine.x, mine.y}, Tile::SIZE,
+        rng, {mine.x, mine.y},
+        SDL_Rect{board[0][0].x, board[0][0].y, cols * Tile::SIZE, rows * Tile::SIZE },
     };
     animState.play(GameAnims::EXPLODE, detonationAnim);
 
@@ -644,7 +646,7 @@ void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
 
 }
 
-Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
+static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
     for (int r = 0; r < self.rows; ++r) {
         for (int c = 0; c < self.cols; ++c) {
             if (self.board[r][c].isMouseOver(mouseX, mouseY)) {
@@ -804,6 +806,9 @@ void Game::loadMedia() {
     playAgainBtn.load();
     playAgainBtn.hidden = true;
 
+    restartBtn.onclick = [this](){ restartGame(); };
+    playAgainBtn.onclick = [this](){ restartGame(); };
+
     {
 
         const int NUMBTNS = sizeof(Difficulty::SIZES) / sizeof(Difficulty::SIZES[0]);
@@ -814,6 +819,14 @@ void Game::loadMedia() {
             btn.text.setColor(Difficulty::COLORS[i]);
             btn.text.setString(Difficulty::STRINGS[i]);
         }
+    }
+
+    for (size_t i = 0; i < difficultyBtns.size(); ++i) {
+        difficultyBtns[i].onclick = [this, i]() {
+            rows = Difficulty::SIZES[i].rows;
+            cols = Difficulty::SIZES[i].cols;
+            resizeBoard();
+        };
     }
 
     for (int i = 0; i < SoundEffects::COUNT; ++i) {

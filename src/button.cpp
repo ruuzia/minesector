@@ -3,6 +3,7 @@
 
 Button::Button(Texture *tex) : background(tex), hidden(false) {
     hidden = false;
+    onclick = nullptr;
 }
 
 Button::~Button() {}
