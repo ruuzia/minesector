@@ -17,12 +17,13 @@ public:
     virtual void OnStart() = 0;
     virtual bool OnUpdate(double dt) = 0;
 
-    callback onstart;
-    callback onfinish;
+    callback onstart{};
+    callback onfinish{};
 };
 
 class AnimState {
 public:
+    bool foo = false;
     AnimState();
 
     void update(double dt);
@@ -38,9 +39,9 @@ public:
     std::unique_ptr<Anim> anim;
 
 private:
+    Uint32 startTime;
     int active;
     bool started;
-    Uint32 startTime;
 };
 
 class MineRevealAnim : public Anim {

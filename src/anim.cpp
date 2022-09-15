@@ -6,16 +6,9 @@ namespace MineReveal {
     constexpr double FINISHED_ALPHA = 0.3;
 }
 
-Anim::Anim() {
-    onstart = nullptr;
-    onfinish = nullptr;
-}
+Anim::Anim() {}
 
-AnimState::AnimState() {
-    active = false;
-    anim.reset();
-    //anim.reset();
-}
+AnimState::AnimState() {}
 
 Anim& AnimState::play(int code, Anim* anim_, Uint32 delay) {
     // Destroy any already active anim
@@ -42,12 +35,12 @@ void AnimState::kill() {
         if (anim->onfinish) anim->onfinish();
 
         active = 0;
-        anim.reset();
+        anim = nullptr;
     }
 }
 
 void AnimState::update(double dt) {
-    if (anim == nullptr) return;
+    if (!anim) return;
 
     if (!started) {
         if (SDL_GetTicks() >= startTime) {

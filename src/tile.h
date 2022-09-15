@@ -112,6 +112,7 @@ public:
     AnimState animState;
 
     static int SIZE;
+    Game *game;
 private:
     bool mine;
     bool hidden;
@@ -120,7 +121,6 @@ private:
     void playFlagAnim();
     void playUncoverAnim(Uint32 delay);
 
-    Game *game;
 };
 
 

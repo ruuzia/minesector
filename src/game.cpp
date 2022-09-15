@@ -7,7 +7,7 @@
 namespace Detonation {
     namespace Particle {
         namespace Speed {
-            constexpr float MAX = 150.0 / 32.0;
+            constexpr float MAX = 300.0;
             constexpr float MIN = -MAX;
         }
         
@@ -28,7 +28,7 @@ namespace Detonation {
         constexpr float POS_VARIATION = 100.0;
 
         namespace Ember {
-            constexpr float DELTA_ALPHA = -0.2;
+            constexpr float DELTA_ALPHA = -0.4;
 
             namespace Size {
                 constexpr float MIN = 6.0 / 32.0;
@@ -37,6 +37,7 @@ namespace Detonation {
         }
 
         namespace Piece {
+            constexpr float CHANCE = 0.3;
             constexpr float DELTA_ALPHA = -0.1;
 
             namespace Size {
@@ -47,8 +48,8 @@ namespace Detonation {
 
     namespace Emitter {
         constexpr float PERIOD = 0.05;
-        constexpr int COUNT = 3;
-        constexpr float TIME = 10.0;
+        constexpr int COUNT = 10;
+        constexpr float TIME = 1.0;
     }
 }
 
@@ -124,8 +125,8 @@ public:
         using random = std::uniform_real_distribution<>;
         using namespace Detonation::Particle;
 
-        float speedMin = Speed::MIN * Tile::SIZE;
-        float speedMax = Speed::MAX * Tile::SIZE;
+        float speedMin = Speed::MIN;
+        float speedMax = Speed::MAX;
         dx = random{speedMin, speedMax} (rng);
         dy = random(speedMin, speedMax) (rng);
         lifetime = random(Lifetime::MIN, Lifetime::MAX) (rng);
@@ -137,8 +138,24 @@ public:
 
     void render(double dt) override {
         using namespace Detonation::Particle;
+#if 1
+        float nextx = x + dx * dt;
+        float nexty = y + dy * dt;
+        if ((nextx < field.x) || (nextx > field.x + field.w)) {
+            dx = -dx;
+        } else {
+            x = nextx;
+        }
+
+        if ((nexty < field.y) || (nexty > field.y + field.h)) {
+            dy = -dy;
+        } else {
+            y = nexty;
+        }
+#else
         x += dx * dt;
         y += dy * dt;
+#endif
         color.a += Ember::DELTA_ALPHA * dt;
 
         color.draw();
@@ -208,7 +225,7 @@ bool DetonationAnim::OnUpdate(double dt) {
         if (particles.empty() || particles.back()->age() > Emitter::PERIOD) {
             for (int i = 0; i < Emitter::COUNT; ++i) {
                 //particles.emplace_back(tex, rng, pos.x, pos.y);
-                if (std::uniform_real_distribution<>(0.0, 1.0)(rng) < 0.5) {
+                if (std::uniform_real_distribution<>(0.0, 1.0)(rng) < Particle::Piece::CHANCE) {
                     emitParticle(std::make_unique<DestructionParticle>(tex, rng, pos.x, pos.y, field));
                 }
                 else {
@@ -239,8 +256,8 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
     using namespace Detonation::Particle;
 
     born = SECONDS();
-    float speedMin = Speed::MIN * Tile::SIZE;
-    float speedMax = Speed::MAX * Tile::SIZE;
+    float speedMin = Speed::MIN;
+    float speedMax = Speed::MAX;
     dx = randreal( speedMin, speedMax) (rng);
     dy = randreal( speedMin, speedMax) (rng);
 
@@ -273,14 +290,24 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
 
 void DestructionParticle::render(double dt) {
     using namespace Detonation::Particle;
-    if ((x < field.x) || (x > field.x + field.w)) {
+#if 1
+    float nextx = x + dx * dt;
+    float nexty = y + dy * dt;
+    if ((nextx < field.x) || (nextx > field.x + field.w)) {
         dx = -dx;
+    } else {
+        x = nextx;
     }
-    if ((y < field.y) || (y > field.y + field.h)) {
+
+    if ((nexty < field.y) || (nexty > field.y + field.h)) {
         dy = -dy;
+    } else {
+        y = nexty;
     }
+#else
     x += dx * dt;
     y += dy * dt;
+#endif
     color.a += Piece::DELTA_ALPHA * dt;
 
     if (age() > lifetime / 2) {
@@ -382,7 +409,6 @@ Game::Game(SDL_Window *window)
     loadMedia();
 }
 
-
 void Game::OnStart() {
     load();
     int loadedState = state;
@@ -479,6 +505,7 @@ void Game::load() {
         return;
     }
     cols = SDL_ReadU8(in);
+    resizeBoard();
 
     if (SDL_ReadU8(in) != 'g') {
         printf("Missing game state\n");

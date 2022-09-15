@@ -9,6 +9,10 @@
 #include <SDL_mixer.h>
 #include <cstdio>
 
+#ifdef __EMSCRIPTEN__
+    #include <emscripten.h>
+#endif
+
 #include "texture.h"
 #include "game.h"
 
@@ -16,6 +20,9 @@ constexpr int SCREEN_WIDTH  = 640 * 1.5;
 constexpr int SCREEN_HEIGHT = 480 * 1.5;
 
 SDL_Renderer *renderer;
+
+static bool running = true;
+
 
 App::App() {
     window = nullptr;
@@ -44,7 +51,7 @@ void App::init() {
     window = SDL_CreateWindow("Minesweeper", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == nullptr)
         throw std::runtime_error("Unable to create accelerated renderer. SDL Error: " + std::string(SDL_GetError()));
 
@@ -90,15 +97,20 @@ static int event_filter(void *game, SDL_Event *e) {
             static_cast<Game *>(game)->OnUpdate(dt);
 
             SDL_RenderPresent(renderer);
+            printf("Window resize!\n");
         }
     }
     return 1;
 }
 
 Color bgColor = 0xE0E0E0;
+Game *game;
 
+static void mainloop() {
+    Uint32 current = SDL_GetTicks();
+    double dt = (current - lastFrame) / 1000.0;
+    lastFrame = current;
 
-static bool Update(Game &game, double dt) {
     bgColor.draw();
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderClear(renderer);
@@ -108,17 +120,27 @@ static bool Update(Game &game, double dt) {
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
         case SDL_QUIT:
-            return false;
+#ifdef __EMSCRIPTEN__
+            emscripten_cancel_main_loop();
+#endif
+            running = false;
+            break;
 
         case SDL_KEYDOWN:
             // Force quit with Alt + F4
             if (e.key.keysym.sym == SDLK_F4 && (e.key.keysym.mod & KMOD_ALT)) {
-                printf("Force quit.\n");
-                return false;
+#ifdef __EMSCRIPTEN__
+                emscripten_cancel_main_loop();
+#endif
+                running = false;
+                // Exit immediately, don't save game
+                return;
             }
             else if (e.key.keysym.sym == SDLK_q && (e.key.keysym.mod & KMOD_CTRL)) {
-                printf("Quit.\n");
-                return false;
+#ifdef __EMSCRIPTEN__
+                emscripten_cancel_main_loop();
+#endif
+                running = false;
             }
             else if (e.key.keysym.sym == SDLK_t) {
                 printf("dt: %f\n", dt);
@@ -137,38 +159,33 @@ static bool Update(Game &game, double dt) {
             break;
         
         case SDL_MOUSEBUTTONDOWN:
-            game.onMouseButtonDown(e.button);
+            game->onMouseButtonDown(e.button);
             break;
 
         case SDL_MOUSEBUTTONUP:
-            game.onMouseButtonUp(e.button);
+            game->onMouseButtonUp(e.button);
             break;
 
         case SDL_MOUSEMOTION:
-            game.onMouseMove(e.motion);
+            game->onMouseMove(e.motion);
+            break;
+
+        case SDL_WINDOWEVENT_RESIZED:
+            printf("Window resize event..\n");
             break;
         }
     }
 
-    /*
-    const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
-    if (currentKeyStates[SDL_SCANCODE_F4]
-        && (currentKeyStates[SDL_SCANCODE_LALT] || currentKeyStates[SDL_SCANCODE_RALT]))
-    {
-        printf("Force quit\n");
-        //return false;
-    }
-    */
-
-    game.OnUpdate(dt);
+    game->OnUpdate(dt);
     SDL_RenderPresent(renderer);
-    
-    return true;
+
+    game->save();
 }
 
 App Sim;
 
 int main(void) {
+    printf("Starting main\n");
     try {
         Sim.init();
     }
@@ -180,26 +197,29 @@ int main(void) {
 
     try {
         //loadMedia(sdl, game);
-        Game game(Sim.window);
-        bool running = true;
+        Game _game(Sim.window);
+        game = &_game;
         lastFrame = SDL_GetTicks();
-        game.OnStart();
+        _game.OnStart();
 
-        SDL_SetEventFilter(event_filter, &game);
+        SDL_SetEventFilter(event_filter, &_game);
 
+#ifdef __EMSCRIPTEN__
+        printf("Setting main loop!\n");
+        emscripten_set_main_loop(mainloop, 0, 1);
+        //emscripten_set_main_loop_arg(mainloop, &game, 0, 1);
+#else
         while (running) {
-            Uint32 current = SDL_GetTicks();
-            double dt = (current - lastFrame) / 1000.0;
-            lastFrame = current;
-            running = Update(game, dt);
+            //mainloop((void*)&game);
+            mainloop();
 
             const int updateTime = SDL_GetTicks() - lastFrame;
             if (updateTime < TICKS_PER_FRAME) {
                 SDL_Delay(TICKS_PER_FRAME - updateTime);
             }
         }
+#endif
 
-        game.save();
     }
 
     catch (const std::runtime_error& ex) {
