@@ -100,7 +100,7 @@ static int event_filter(void *game, SDL_Event *e) {
             printf("Window resize!\n");
         }
     }
-    return 1;
+    return 0;
 }
 
 Color bgColor = 0xE0E0E0;
@@ -185,7 +185,6 @@ static void mainloop() {
 App Sim;
 
 int main(void) {
-    printf("Starting main\n");
     try {
         Sim.init();
     }
