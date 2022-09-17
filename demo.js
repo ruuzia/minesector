@@ -8403,6 +8403,10 @@ var ASM_CONSTS = {
   }
   }
 
+  function _foo() {
+          console.log("FOO WAS CALLED hey");
+      }
+
   function _getentropy(buffer, size) {
       if (!_getentropy.randomDevice) {
         _getentropy.randomDevice = getRandomDevice();
@@ -8941,6 +8945,7 @@ var asmLibraryArg = {
   "fd_read": _fd_read,
   "fd_seek": _fd_seek,
   "fd_write": _fd_write,
+  "foo": _foo,
   "getentropy": _getentropy,
   "invoke_dii": invoke_dii,
   "invoke_i": invoke_i,
