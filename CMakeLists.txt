@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project (sdlminesweeper)
 
+# awkward...    what am I supposed to do on windows :/
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:\\mingw_dev\\lib")
 
 find_package(SDL2 REQUIRED)
@@ -20,10 +21,10 @@ if (NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
-set (CMAKE_CXX_FLAGS_DEBUG "-g")
-set (CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-attributes")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-attributes")
 
-set( SOURCES
+set(SOURCES
     src/main.cpp
     src/texture.cpp
     src/game.cpp
@@ -37,15 +38,12 @@ set( SOURCES
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-
 if (UNIX)
     include_directories(${SDL2_INCLUDE_DIRS})
     set(LIBS ${SDL2_LIBRARIES} SDL2_image SDL2_ttf SDL2_mixer)
-
 elseif (WIN32)
-    set (LIBS SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf SDL2_mixer::SDL2_mixer)
+    set(LIBS SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf SDL2_mixer::SDL2_mixer)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-subsystem,windows")
 endif()
-
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
