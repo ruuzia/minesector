@@ -19,16 +19,11 @@
 constexpr int SCREEN_WIDTH  = 640 * 1.5;
 constexpr int SCREEN_HEIGHT = 480 * 1.5;
 
-SDL_Renderer *renderer;
+SDL_Renderer *renderer{};
 
 static bool running = true;
 
-
-App::App() {
-    window = nullptr;
-    renderer = nullptr;
-    isFullscreen = false;
-}
+App::App() : isFullscreen{}, window{} {}
 
 App::~App() {
         SDL_DestroyRenderer(renderer);
@@ -100,7 +95,7 @@ static int event_filter(void *game, SDL_Event *e) {
             printf("Window resize!\n");
         }
     }
-    return 0;
+    return 1;
 }
 
 Color bgColor = 0xE0E0E0;
@@ -114,7 +109,6 @@ static void mainloop() {
     bgColor.draw();
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_RenderClear(renderer);
-
 
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -169,10 +163,6 @@ static void mainloop() {
         case SDL_MOUSEMOTION:
             game->onMouseMove(e.motion);
             break;
-
-        case SDL_WINDOWEVENT_RESIZED:
-            printf("Window resize event..\n");
-            break;
         }
     }
 
@@ -195,7 +185,6 @@ int main(void) {
 
 
     try {
-        //loadMedia(sdl, game);
         Game _game(Sim.window);
         game = &_game;
         lastFrame = SDL_GetTicks();
@@ -204,12 +193,10 @@ int main(void) {
         SDL_SetEventFilter(event_filter, &_game);
 
 #ifdef __EMSCRIPTEN__
-        printf("Setting main loop!\n");
         emscripten_set_main_loop(mainloop, 0, 1);
         //emscripten_set_main_loop_arg(mainloop, &game, 0, 1);
 #else
         while (running) {
-            //mainloop((void*)&game);
             mainloop();
 
             const int updateTime = SDL_GetTicks() - lastFrame;
