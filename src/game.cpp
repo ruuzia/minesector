@@ -1,13 +1,14 @@
+#include "game.h"
 #include <string>
 #include <algorithm>
 #include "app.h"
-#include "game.h"
 #include "color.h"
+#include <assert.h>
 
 namespace Detonation {
     namespace Particle {
         namespace Speed {
-            constexpr float MAX = 300.0;
+            constexpr float MAX = 400.0;
             constexpr float MIN = -MAX;
         }
         
@@ -49,7 +50,7 @@ namespace Detonation {
     namespace Emitter {
         constexpr float PERIOD = 0.05;
         constexpr int COUNT = 10;
-        constexpr float TIME = 1.0;
+        constexpr float TIME = 3.0;
     }
 }
 
@@ -65,7 +66,7 @@ std::string SOUND_FILES[SoundEffects::COUNT] {
     "sounds/explode.wav",
 };
 
-
+struct Quad { int l, r, t, b; };
 
 class DetonationParticle {
 protected:
@@ -92,6 +93,21 @@ public:
     virtual ~DetonationParticle() = default;
 
     virtual void render(double dt) = 0;
+    void updatePosition(double dt, Quad quad) {
+        float nextx = x + dx * dt;
+        float nexty = y + dy * dt;
+        if ((nextx + quad.l < field.x) || (nextx + quad.r > field.x + field.w)) {
+            dx = -dx;
+        } else {
+            x = nextx;
+        }
+
+        if ((nexty + quad.t < field.y) || (nexty + quad.b > field.y + field.h)) {
+            dy = -dy;
+        } else {
+            y = nexty;
+        }
+    }
 
     [[nodiscard]] bool isDead() const {
         return age() > lifetime;
@@ -115,6 +131,7 @@ private:
 
     Color color { 0xF00000 };
     Texture &tex;
+    Quad bounds{};
 };
 
 class EmberParticle : public DetonationParticle {
@@ -128,7 +145,7 @@ public:
         float speedMin = Speed::MIN;
         float speedMax = Speed::MAX;
         dx = random{speedMin, speedMax} (rng);
-        dy = random(speedMin, speedMax) (rng);
+        dy = random{speedMin, speedMax} (rng);
         lifetime = random(Lifetime::MIN, Lifetime::MAX) (rng);
         size = random(Ember::Size::MIN * Tile::SIZE, Ember::Size::MAX * Tile::SIZE) (rng);
 
@@ -138,24 +155,10 @@ public:
 
     void render(double dt) override {
         using namespace Detonation::Particle;
-#if 1
-        float nextx = x + dx * dt;
-        float nexty = y + dy * dt;
-        if ((nextx < field.x) || (nextx > field.x + field.w)) {
-            dx = -dx;
-        } else {
-            x = nextx;
-        }
 
-        if ((nexty < field.y) || (nexty > field.y + field.h)) {
-            dy = -dy;
-        } else {
-            y = nexty;
-        }
-#else
-        x += dx * dt;
-        y += dy * dt;
-#endif
+        Quad bounds = {0, size, 0, size};
+        updatePosition(dt, bounds);
+
         color.a += Ember::DELTA_ALPHA * dt;
 
         color.draw();
@@ -274,9 +277,13 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
     float size = Piece::Size::MAX * Tile::SIZE;
     for (int i = 0; i < QUAD_SIDES; ++i) {
         theta = randreal(theta, 2*M_PI)(rng);
-        //double r = randreal(15, 20)(rng);
-        quadverts[i].x = int(cos(theta) * size);
-        quadverts[i].y = int(sin(theta) * size);
+        auto& q = quadverts[i];
+        q.x = int(cos(theta) * size);
+        q.y = int(sin(theta) * size);
+        if (q.x < bounds.l) bounds.l = q.x;
+        if (q.x > bounds.r) bounds.r = q.x;
+        if (q.y < bounds.t) bounds.t = q.y;
+        if (q.y > bounds.b) bounds.b = q.y;
     }
 
     // Convert quad to triangle vertices
@@ -287,27 +294,10 @@ DestructionParticle::DestructionParticle(Texture &tex, std::mt19937& rng, int x,
 
 }
 
-
 void DestructionParticle::render(double dt) {
     using namespace Detonation::Particle;
-#if 1
-    float nextx = x + dx * dt;
-    float nexty = y + dy * dt;
-    if ((nextx < field.x) || (nextx > field.x + field.w)) {
-        dx = -dx;
-    } else {
-        x = nextx;
-    }
+    updatePosition(dt, bounds);
 
-    if ((nexty < field.y) || (nexty > field.y + field.h)) {
-        dy = -dy;
-    } else {
-        y = nexty;
-    }
-#else
-    x += dx * dt;
-    y += dy * dt;
-#endif
     color.a += Piece::DELTA_ALPHA * dt;
 
     if (age() > lifetime / 2) {
