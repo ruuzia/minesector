@@ -95,6 +95,12 @@ static int event_filter(void *game, SDL_Event *e) {
             printf("Window resize!\n");
         }
     }
+    // Don't consume some keybinds
+    if ((e->type == SDL_KEYDOWN
+            && e->key.keysym.sym == SDLK_r
+            && (e->key.keysym.mod & KMOD_CTRL))
+        ) return 0;
+    // Put on SDL_PollEvent queue
     return 1;
 }
 
