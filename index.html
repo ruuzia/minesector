@@ -4,16 +4,24 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <script src="demo.js" defer></script>
     <style>
 @import url(https://fonts.googleapis.com/css?family=Arbutus);
 body {
     background: #D0D0D0;
     font-family: Arbutus;
 }
-body * {
+#canvas {
     margin-left: auto;
     margin-right: auto;
     width: fit-content;
+    display: block;
+}
+
+p, h1 {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
     </style>
 </head>
@@ -22,9 +30,9 @@ body * {
     <h1>
         Minesweeper Demo
     </h1>
-    <p style="width: 50em;">
-        This is a simple Minesweeper game. It's a cross-platform desktop application writting in C++ with SDL. Ported here to WebAssembly using Emscripten. <a display="inline" href="https://github.com/grassdne/sdlminesweeper/" target="_blank">View on Github</a>
-    </p>
+        <p style="width: 50em;">
+            This is a simple Minesweeper game. It's a cross-platform desktop application writting in C++ with SDL. Ported here to WebAssembly using Emscripten. <a style="display: block;" href="https://github.com/grassdne/sdlminesweeper/" target="_blank">View on Github</a>
+        </p>
     <br>
 
     <canvas id="canvas" oncontextmenu="event.preventDefault()" style="display: block;"></canvas>
@@ -37,7 +45,6 @@ body * {
 
     <div style="height: 10em"></div>
 
-    <script src="demo.js"></script>
 </body>
 
 </html>
