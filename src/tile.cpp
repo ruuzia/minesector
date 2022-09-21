@@ -59,11 +59,8 @@ class FlagAnim : public Anim {
 public:
     FlagAnim(const Texture *flagTex, SDL_Point pos, bool& isFlagged);
 
-    // Call virtual destructor
-    ~FlagAnim() {}
-
-    bool OnUpdate(double dt);
-    void OnStart();
+    bool OnUpdate(double dt) override;
+    void OnStart() override;
 
 private:
     const Texture* flag;
@@ -125,14 +122,16 @@ private:
 
 
 UncoverAnim::UncoverAnim(const Texture *hidden, SDL_Point pos, std::mt19937& rng)
-    : hidden(hidden), pos(pos), rng(rng)
+    : hidden(hidden)
+    , pos(pos)
+    , rng(rng)
+    , widthPercent(1.0)
+    , heightPercent(1.0)
+    , deltaWidth(0.0)
+    , deltaHeight(0.0)
+    , inverseX(false)
+    , inverseY(false)
 {
-    deltaWidth = 0.0;
-    deltaHeight = 0.0;
-    widthPercent = 1.0;
-    heightPercent = 1.0;
-    inverseX = false;
-    inverseY = false;
 }
 
 void UncoverAnim::OnStart() {
@@ -202,12 +201,12 @@ Tile::Tile(Texture *tex) : Button(tex) {
     isRed = false;
 }
 
+// WARNING: copy constructor and operator= don't actually copy fields rn
 Tile::Tile(Tile const & t)
     : Tile()
 {
     (void)t;
 }
-
 void Tile::operator=(Tile other) {
     (void)other;
 }
@@ -215,21 +214,21 @@ void Tile::operator=(Tile other) {
 Uint8 Tile::save() {
     using namespace TileSaveData;
     Uint8 data = 0;
-    if (isHidden())  data |= HIDDEN;
-    if (isMine())    data |= MINE;
-    if (isFlagged()) data |= FLAGGED;
-    if (isRed)       data |= RED;
-    if (removed)     data |= REMOVED;
+    if (isHidden())   data |= HIDDEN;
+    if (isMine())     data |= MINE;
+    if (isFlagged())  data |= FLAGGED;
+    if (isRed)        data |= RED;
+    if (removed)      data |= REMOVED;
     return data;
 }
 
 void Tile::load(Uint8 data) {
     using namespace TileSaveData;
-    setMine   (data & MINE);
-    setHidden (data & HIDDEN);
-    setFlagged(data & FLAGGED);
-    isRed =    data & RED;
-    removed =  data & REMOVED;
+    setMine     (data & MINE);
+    setHidden   (data & HIDDEN);
+    setFlagged  (data & FLAGGED);
+    isRed =      data & RED;
+    removed =    data & REMOVED;
 }
 
 // No animations
