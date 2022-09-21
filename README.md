@@ -1,6 +1,6 @@
 ## Minesweeper
 
-Pretty classic Minesweeper.
+Pretty classic Minesweeper. Web Demo deployed [here](https://grassdne.github.io/sdlminesweeper/)!
 
 ![game](example.png)
 
