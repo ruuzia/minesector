@@ -16,8 +16,8 @@
 #include "texture.h"
 #include "game.h"
 
-constexpr int SCREEN_WIDTH  = 640 * 1.5;
-constexpr int SCREEN_HEIGHT = 480 * 1.5;
+constexpr int SCREEN_WIDTH  = 640 * 1.2;
+constexpr int SCREEN_HEIGHT = 480 * 1.2;
 
 SDL_Renderer *renderer{};
 
