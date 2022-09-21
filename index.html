@@ -41,6 +41,12 @@ p, h1 {
         var Module = {
                     canvas: document.getElementById('canvas'),
                 };
+        
+        // https://developer.chrome.com/blog/autoplay/#webaudio
+        // https://github.com/emscripten-core/emscripten/issues/6511#issuecomment-483039500
+        canvas.onclick = () => {
+    	  if (Module.SDL2.audioContext.state == 'suspended') { Module.SDL2.audioContext.resume(); }
+        });
     </script>
 
     <div style="height: 10em"></div>
