@@ -19,6 +19,8 @@
 constexpr int SCREEN_WIDTH  = 640 * 1.2;
 constexpr int SCREEN_HEIGHT = 480 * 1.2;
 
+constexpr Uint32 TOUCH_HOLD_TICKS = 200;
+
 SDL_Renderer *renderer{};
 
 static bool running = true;
@@ -107,7 +109,6 @@ static int event_filter(void *game, SDL_Event *e) {
 Color bgColor = 0xE0E0E0;
 Game *game;
 
-constexpr Uint32 TOUCH_HOLD_TICKS = 250;
 static Uint32 touchFingerDown;
 
 static void mainloop() {
