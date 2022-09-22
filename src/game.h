@@ -49,8 +49,8 @@ public:
     void save();
     void load();
 
-    void onMouseButtonDown(SDL_MouseButtonEvent const &e);
-    void onMouseButtonUp(SDL_MouseButtonEvent const &e);
+    void onClick(int x, int y);
+    void onAltClick(int x, int y);
 
     void onMouseMove(SDL_MouseMotionEvent const& e);
 

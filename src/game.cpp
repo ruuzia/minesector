@@ -527,39 +527,41 @@ void Game::restartGame() {
     ready();
 }
 
-void Game::onMouseButtonDown(SDL_MouseButtonEvent const & e) {
+void Game::onClick(int x, int y) {
     if (currentHover) {
         // Tile is hovered over
-        if (e.button == SDL_BUTTON_LEFT) {
-            if (currentHover->isHidden() && currentHover->isUnflagged()) {
-                if (state & GameState::STARTED) {
-                    currentHover->flip();
-                    onRevealTile(*currentHover);
-                } else {
-                    // Build starting area
-                    generateStartingArea(*currentHover);
-                    state |= GameState::STARTED;
-                }
-            }
-        } else if (e.button == SDL_BUTTON_RIGHT && currentHover->isHidden()) {
-            // Flag tile
-            if (currentHover->isUnflagged()) {
-                currentHover->flag();
+        if (currentHover->isHidden() && currentHover->isUnflagged()) {
+            if (state & GameState::STARTED) {
+                currentHover->flip();
+                onRevealTile(*currentHover);
             } else {
-                currentHover->unflag();
+                // Build starting area
+                generateStartingArea(*currentHover);
+                state |= GameState::STARTED;
             }
-            Mix_PlayChannel(-1, sounds[currentHover->isFlagged() ? SoundEffects::FLAG : SoundEffects::WHOOSH], 0);
         }
     }
-    else if (e.button == SDL_BUTTON_LEFT) {
+    else {
         for (auto btn : buttons) {
-            if (btn->onclick && btn->isMouseOver(e.x, e.y)) {
+            if (btn->onclick && btn->isMouseOver(x, y)) {
                 btn->onclick();
                 return;
             }
         }
     }
+}
 
+void Game::onAltClick(int x, int y) {
+    (void)x; (void)y;
+    if (currentHover && currentHover->isHidden()) {
+        // Flag tile
+        if (currentHover->isUnflagged()) {
+            currentHover->flag();
+        } else {
+            currentHover->unflag();
+        }
+        Mix_PlayChannel(-1, sounds[currentHover->isFlagged() ? SoundEffects::FLAG : SoundEffects::WHOOSH], 0);
+    }
 }
 
 enum GameAnims {
@@ -648,11 +650,6 @@ void Game::onRevealTile(Tile& revealed) {
         playAgainBtn.hidden = false;
         restartBtn.hidden = true;
     }
-}
-
-void Game::onMouseButtonUp(SDL_MouseButtonEvent const & e) {
-    (void)e;
-
 }
 
 static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {

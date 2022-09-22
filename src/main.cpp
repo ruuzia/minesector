@@ -107,6 +107,9 @@ static int event_filter(void *game, SDL_Event *e) {
 Color bgColor = 0xE0E0E0;
 Game *game;
 
+constexpr Uint32 TOUCH_HOLD_TICKS = 1000;
+static Uint32 touchFingerDown;
+
 static void mainloop() {
     Uint32 current = SDL_GetTicks();
     double dt = (current - lastFrame) / 1000.0;
@@ -159,17 +162,39 @@ static void mainloop() {
             break;
         
         case SDL_MOUSEBUTTONDOWN:
-            game->onMouseButtonDown(e.button);
+            if (e.button.which == SDL_TOUCH_MOUSEID) {
+                touchFingerDown = current;
+            }
+            else if (e.button.button == SDL_BUTTON_LEFT) {
+                game->onClick(e.button.x, e.button.y);
+            }
+            else if (e.button.button == SDL_BUTTON_RIGHT) {
+                game->onAltClick(e.button.x, e.button.y);
+            }
             break;
 
         case SDL_MOUSEBUTTONUP:
-            game->onMouseButtonUp(e.button);
+            if (e.button.which == SDL_TOUCH_MOUSEID) {
+                if (touchFingerDown) {
+                    // Normal click
+                    game->onClick(e.button.x, e.button.y);
+                    touchFingerDown = 0;
+                }
+            }
             break;
 
         case SDL_MOUSEMOTION:
             game->onMouseMove(e.motion);
             break;
         }
+    }
+
+    if (touchFingerDown && current >= touchFingerDown + TOUCH_HOLD_TICKS) {
+        // We've touched for TOUCH_HOLD_TICKS time, now simulate right click
+        int x,y;
+        SDL_GetMouseState(&x, &y);
+        game->onAltClick(x, y);
+        touchFingerDown = 0;
     }
 
     game->OnUpdate(dt);
