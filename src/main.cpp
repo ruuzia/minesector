@@ -107,7 +107,7 @@ static int event_filter(void *game, SDL_Event *e) {
 Color bgColor = 0xE0E0E0;
 Game *game;
 
-constexpr Uint32 TOUCH_HOLD_TICKS = 1000;
+constexpr Uint32 TOUCH_HOLD_TICKS = 250;
 static Uint32 touchFingerDown;
 
 static void mainloop() {
