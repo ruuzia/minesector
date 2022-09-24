@@ -26,15 +26,15 @@ constexpr float NUMBER_SCALE = 0.8;
 // No array designators :(
 
 std::string TILE_FILES[TileBG::COUNT] = {
-    "images/square_blank.png",
-    "images/tile.png",
-    "images/hovered_tile.png",
-    "images/square_red.png",
+    "assets/images/square_blank.png",
+    "assets/images/tile.png",
+    "assets/images/hovered_tile.png",
+    "assets/images/square_red.png",
 };
 
 std::string ICON_FILES[TileOverlay::COUNT] = {
-    "images/flag.png",
-    "images/mine.png",
+    "assets/images/flag.png",
+    "assets/images/mine.png",
 };
 
 const Color NUMBER_COLORS[] = {

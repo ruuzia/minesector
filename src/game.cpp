@@ -60,10 +60,10 @@ constexpr Uint32 MINE_REVEAL_MILLISECONDS = 5000;
 constexpr Uint32 FLIP_DELAY = 100;
 
 std::string SOUND_FILES[SoundEffects::COUNT] {
-    "sounds/flag.wav",
-    "sounds/whoosh.wav",
-    "sounds/blip.wav",
-    "sounds/explode.wav",
+    "assets/sounds/flag.wav",
+    "assets/sounds/whoosh.wav",
+    "assets/sounds/blip.wav",
+    "assets/sounds/explode.wav",
 };
 
 struct Quad { int l, r, t, b; };
@@ -382,7 +382,7 @@ Game::Game(SDL_Window *window)
     , cols(Difficulty::SIZES[1].cols)
     , board(rows, std::vector<Tile>(cols))
     , rng(std::random_device{}())
-    , mainFont("fonts/Arbutus-Regular.ttf")
+    , mainFont("assets/fonts/Arbutus-Regular.ttf")
     , window(window)
     , title(&mainFont, "Minesweeper")
     , flagCounter(&mainFont, "0/? flags", 0xA00000)
