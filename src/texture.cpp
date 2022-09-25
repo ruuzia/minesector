@@ -64,7 +64,6 @@ void Texture::loadFile(std::string& path) {
     imgHeight = height;
 }
 
-//void Texture::loadText(Font &font, const char *text, SDL_Color color) {
 void Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
     free();
 

@@ -382,18 +382,21 @@ Game::Game(SDL_Window *window)
     , cols(Difficulty::SIZES[1].cols)
     , board(rows, std::vector<Tile>(cols))
     , rng(std::random_device{}())
+    , saveDirectory(SDL_GetPrefPath("grassdne", "sdlminesweeper"))
     , mainFont("assets/fonts/Arbutus-Regular.ttf")
     , window(window)
-    , title(&mainFont, "Minesweeper")
-    , flagCounter(&mainFont, "0/? flags", 0xA00000)
-    , restartBtn(&mainFont, "Restart!", 0xFF1000)
-    , playAgainBtn(&mainFont, "Play again?", 0x00C000)
+    , title(mainFont.raw(), "Minesweeper")
+    , flagCounter(mainFont.raw(), "0/? flags", 0xA00000)
+    , restartBtn(mainFont.raw(), "Restart!", 0xFF1000)
+    , playAgainBtn(mainFont.raw(), "Play again?", 0x00C000)
     , currentHover(nullptr)
     , activeBtn(-1)
 {
-    saveDirectory = SDL_GetPrefPath("grassdne", "sdlminesweeper");
     if (saveDirectory == NULL) {
-        printf("Error getting save directory: %s", SDL_GetError());
+        printf("Error getting save directory: %s\n", SDL_GetError());
+    }
+    else {
+        printf("Save directory: %s\n", saveDirectory);
     }
 
     loadMedia();
@@ -803,7 +806,7 @@ void Game::generateMines() {
 void Game::loadMedia() {
     updateFlagCount();
 
-    Tile::loadMedia(mainFont);
+    Tile::loadMedia(mainFont.raw());
 
     restartBtn.setScale(0.5);
     restartBtn.load();
@@ -818,7 +821,7 @@ void Game::loadMedia() {
     {
 
         const int NUMBTNS = sizeof(Difficulty::SIZES) / sizeof(Difficulty::SIZES[0]);
-        difficultyBtns.resize(NUMBTNS, &mainFont);
+        difficultyBtns.resize(NUMBTNS, mainFont.raw());
 
         for (int i = 0; i < NUMBTNS; ++i) {
             auto& btn = difficultyBtns[i];

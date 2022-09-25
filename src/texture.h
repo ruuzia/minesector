@@ -24,7 +24,6 @@ public:
         setSize(w, h);
     }
 
-    //void loadText(Font &font, const char* text, SDL_Color color);
     void loadText(TTF_Font *font, const char* text, SDL_Color color);
 
     void free();

@@ -10,7 +10,7 @@
 
 class Text {
 public:
-    Text(Font const* font, std::string string_={}, Color color = {0.f, 0.f, 0.f});
+    Text(TTF_Font * font, std::string string_={}, Color color = {0.f, 0.f, 0.f});
     ~Text() = default;
 
     void render();
@@ -39,7 +39,7 @@ public:
     int x, y;
 
     bool loaded = false;
-    Font const* font;
+    TTF_Font * font;
     std::string string;
     Color color;
     float scale;

@@ -47,7 +47,7 @@ public:
     static Texture backgrounds[TileBG::COUNT];
     static Texture overlays[TileOverlay::COUNT];
     static Texture numbers[1 + NUMBER_TILES_COUNT];
-    static void loadMedia(Font const& font);
+    static void loadMedia(TTF_Font *font);
     static void reposition();
     static void free();
 

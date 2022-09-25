@@ -16,7 +16,7 @@ enum GameState {
     STARTED = 1,
     WON = 2,
     LOST = 4,
-    OVER = GameState::WON | GameState::LOST,
+    OVER = WON | LOST,
 };
 
 namespace SoundEffects {

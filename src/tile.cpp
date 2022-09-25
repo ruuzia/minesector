@@ -413,7 +413,7 @@ Texture Tile::backgrounds[TileBG::COUNT];
 Texture Tile::overlays[TileOverlay::COUNT];
 Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
 
-void Tile::loadMedia(Font const& font) {
+void Tile::loadMedia(TTF_Font *font) {
     for (int i = 0; i < TileBG::COUNT; ++i) {
         Tile::backgrounds[i].loadFile(TILE_FILES[i]);
     }
@@ -427,7 +427,7 @@ void Tile::loadMedia(Font const& font) {
         const char num[] = {char(i + '0'), '\0'};
 
         const Color color = NUMBER_COLORS[i];
-        numbers[i].loadText(font.raw(), num, color.as_sdl());
+        numbers[i].loadText(font, num, color.as_sdl());
     }
 
     reposition();
