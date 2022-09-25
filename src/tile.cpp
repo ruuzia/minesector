@@ -295,6 +295,10 @@ void Tile::mouseEnter() {
     if (isHidden() && isUnflagged()) {
         background = &backgrounds[TileBG::HIGHLIGHT];
     }
+    else if (animState.isAnimActive(TileAnim::UNCOVER) && !animState.started) {
+        // remove delay on uncover animation when user hovers over
+        animState.startTime = SDL_GetTicks();
+    }
 }
 
 void Tile::mouseLeave() {

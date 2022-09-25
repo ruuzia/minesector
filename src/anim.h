@@ -35,13 +35,11 @@ public:
 
     bool isAnimActive(int code);
 
-    Uint64 current;
     std::unique_ptr<Anim> anim;
 
-private:
     Uint32 startTime;
-    int active;
     bool started;
+    int active;
 };
 
 class MineRevealAnim : public Anim {
