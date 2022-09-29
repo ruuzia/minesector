@@ -59,6 +59,20 @@ constexpr int VERT_COUNT = 6;
 constexpr Uint32 MINE_REVEAL_MILLISECONDS = 5000;
 constexpr Uint32 FLIP_DELAY = 100;
 
+constexpr float PERCENT_MINES = 0.15;
+
+constexpr int STARTING_SAFE_COUNT = 15;
+
+namespace Difficulty {
+    constexpr struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
+    const std::string STRINGS[] = {"Easy", "Medium", "Hard"};
+    const Color COLORS[] = {
+        { 0x008010 },
+        { 0xF08000 },
+        { 0xA03000 },
+    };
+}
+
 std::string SOUND_FILES[SoundEffects::COUNT] {
     "assets/sounds/flag.wav",
     "assets/sounds/whoosh.wav",
@@ -322,20 +336,6 @@ void DestructionParticle::render(double dt) {
 
 
 Mix_Chunk* Game::sounds[SoundEffects::COUNT];
-
-constexpr float PERCENT_MINES = 0.15;
-
-constexpr int STARTING_SAFE_COUNT = 15;
-
-namespace Difficulty {
-    constexpr struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
-    const std::string STRINGS[] = {"Easy", "Medium", "Hard"};
-    const Color COLORS[] = {
-        { 0x008010 },
-        { 0xF08000 },
-        { 0xA03000 },
-    };
-}
 
 void Game::updateFlagCount() {
     int flagCount = 0;
@@ -707,8 +707,6 @@ static void pushHiddenNeighbors(Tile& tile, std::vector<Tile*>& tiles, bool diag
 }
 
 void Game::flipTiles(Tile& root, int count, std::vector<Tile*>& revealqueue) {
-    if (count <= 0) return;
-
     std::vector<Tile*> tiles;
     std::vector<Tile*> tospread;
 
@@ -716,7 +714,7 @@ void Game::flipTiles(Tile& root, int count, std::vector<Tile*>& revealqueue) {
     pushHiddenNeighbors(root, tiles, true);
 
     while (count > 0 && !tiles.empty()) {
-        // Select up to 8 random neighbors
+        // Select up to N random neighbors
         std::shuffle(tiles.begin(), tiles.end(), rng);
         int num = std::min(int(std::min((long unsigned)tiles.size(), 8UL)), count);
 
