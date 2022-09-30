@@ -73,12 +73,26 @@ namespace Difficulty {
     };
 }
 
-std::string SOUND_FILES[SoundEffects::COUNT] {
+float SOUND_VOLUMES[SoundEffects::COUNT] = {
+    0.7,
+    0.5,
+    0.3,
+    0.33,
+};
+
+std::string SOUND_FILES[SoundEffects::COUNT] = {
     "assets/sounds/flag.wav",
     "assets/sounds/whoosh.wav",
     "assets/sounds/blip.wav",
     "assets/sounds/explode.wav",
 };
+
+static void playSoundEffect(int effect) {
+    int channel = Mix_PlayChannel(-1, Game::sounds[effect], 0);
+    if (channel != -1) {
+        Mix_Volume(channel, int(MIX_MAX_VOLUME * SOUND_VOLUMES[effect]));
+    }
+}
 
 struct Quad { int l, r, t, b; };
 
@@ -563,7 +577,7 @@ void Game::onAltClick(int x, int y) {
         } else {
             currentHover->unflag();
         }
-        Mix_PlayChannel(-1, sounds[currentHover->isFlagged() ? SoundEffects::FLAG : SoundEffects::WHOOSH], 0);
+        playSoundEffect(currentHover->isFlagged() ? SoundEffects::FLAG : SoundEffects::WHOOSH);
     }
 }
 
@@ -636,17 +650,14 @@ void Game::onWon() {
 void Game::onRevealTile(Tile& revealed) {
     if (revealed.isMine()) {
         onLost(revealed);
-        Mix_PlayChannel(-1, sounds[SoundEffects::EXPLODE], 0);
+        playSoundEffect(SoundEffects::EXPLODE);
     }
     else if (hasWon()) {
         printf("Game won!\n");
         onWon();
     }
     else {
-        int channel = Mix_PlayChannel(-1, sounds[SoundEffects::BLIP], 0);
-        if (channel != -1) {
-            Mix_Volume(channel, 64);
-        }
+        playSoundEffect(SoundEffects::BLIP);
     }
 
     if (state & GameState::OVER) {

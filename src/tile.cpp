@@ -22,9 +22,6 @@ namespace Uncover {
 
 constexpr float NUMBER_SCALE = 0.8;
 
-// C++17 standard compatible for now
-// No array designators :(
-
 std::string TILE_FILES[TileBG::COUNT] = {
     "assets/images/square_blank.png",
     "assets/images/tile.png",
@@ -363,7 +360,6 @@ void Tile::playUncoverAnim(Uint32 delay) {
     auto uncoverAnim = new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng);
     // Use onstart to set textures to account for `delay` parameter
     uncoverAnim->onstart = [this]() {
-        //Mix_PlayChannel(-1, game->sounds[SoundEffects::SHOVEL], 0);
         overlay = &numbers[countTouchingMines()];
         background = &backgrounds[TileBG::BLANK_SQUARE];
     };
