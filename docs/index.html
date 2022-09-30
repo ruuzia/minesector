@@ -13,10 +13,33 @@ body {
     font-family: Arbutus;
 }
 #canvas {
+    display: block;
     margin-left: auto;
     margin-right: auto;
-    width: fit-content;
-    display: block;
+}
+
+#container {
+	background-color: #E0E0E0;
+	width: fit-content;
+	margin-left: auto;
+	margin-right: auto;
+    margin-top: 2em;
+    padding-left: 25px;
+    padding-right: 25px;
+    padding-top: 25px;
+    padding-bottom: 100px;
+    border-radius: 10px;
+}
+
+#info {
+    --margin-x: 21px;
+	background-color: #DDDDDD;
+    margin-bottom: 38px;
+    margin-right: var(--margin-x);
+    margin-left: var(--margin-x);
+    padding-top: 1px;
+    padding-bottom: 1em;
+    border-radius: 20px;
 }
 
 p, h1 {
@@ -28,15 +51,21 @@ p, h1 {
 </head>
 
 <body>
-    <h1>
-        Minesweeper Demo
-    </h1>
-        <p style="width: 50em;">
-            This is a simple Minesweeper game. It's a cross-platform desktop application writting in C++ with SDL. Ported here to WebAssembly using Emscripten. <a style="display: block;" href="https://github.com/grassdne/sdlminesweeper/" target="_blank">View on Github</a>
-        </p>
-    <br>
+    <div id="container">
+        <div style="height: 1em"></div>
+        <div id="info">
+            <h1>
+                Minesweeper Demo
+            </h1>
+                <p style="width: 45em;">
+                    This is a simple Minesweeper game. It's a cross-platform desktop application writting in C++ with SDL. Ported here to WebAssembly using Emscripten.
+                    <a style="display: block; margin-top: 1em;" href="https://github.com/grassdne/sdlminesweeper/" target="_blank">View on Github</a>
+                </p>
+            <br>
+        </div>
 
-    <canvas id="canvas" oncontextmenu="event.preventDefault()" style="display: block;"></canvas>
+        <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    </div>
 
     <script type='text/javascript'>
         var Module = {
