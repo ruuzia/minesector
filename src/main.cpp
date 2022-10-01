@@ -21,17 +21,17 @@ constexpr int SCREEN_HEIGHT = 480 * 1.2;
 
 constexpr Uint32 TOUCH_HOLD_TICKS = 200;
 
-SDL_Renderer *renderer{};
+SDL_Renderer *renderer;
 
 static bool running = true;
 
 App::App() : isFullscreen{}, window{} {}
 
 App::~App() {
-        SDL_DestroyRenderer(renderer);
+        if (renderer) SDL_DestroyRenderer(renderer);
         renderer = nullptr;
 
-        SDL_DestroyWindow(window);
+        if (window) SDL_DestroyWindow(window);
         window = nullptr;
 
         IMG_Quit();
@@ -108,6 +108,12 @@ static int event_filter(void *game, SDL_Event *e) {
 
 Color bgColor = 0xE0E0E0;
 Game *game;
+
+extern "C" {
+    void save(void) {
+        game->save();
+    }
+}
 
 static Uint32 touchFingerDown;
 
@@ -200,8 +206,6 @@ static void mainloop() {
 
     game->OnUpdate(dt);
     SDL_RenderPresent(renderer);
-
-    game->save();
 }
 
 App Sim;
@@ -236,6 +240,7 @@ int main(void) {
                 SDL_Delay(TICKS_PER_FRAME - updateTime);
             }
         }
+        game->save();
 #endif
 
     }

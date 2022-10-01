@@ -77,6 +77,7 @@ p, h1 {
         canvas.onclick = () => {
     	  if (Module.SDL2.audioContext.state == 'suspended') { Module.SDL2.audioContext.resume(); }
         };
+        Module.onRuntimeInitialized = () => addEventListener("visibilitychange", _save);
     </script>
 
     <div style="height: 10em"></div>

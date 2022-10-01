@@ -94,6 +94,59 @@ static void playSoundEffect(int effect) {
     }
 }
 
+namespace Save {
+    char HEADER[] = "MINE ";
+    const char *FILE = "data.bin";
+}
+
+extern "C" {
+    extern bool openSaveReader(void);
+    extern Uint8 readByte(void);
+    extern bool openSaveWriter(void);
+    extern int writeByte(Uint8 value);
+    extern void closeSaveFile(void);
+
+#ifndef __EMSCRIPTEN__
+    static SDL_RWops *rw;
+    static char* getSaveFile(void) {
+        char* path = SDL_GetPrefPath("grassdne", "sdlminesweeper");
+        if (path == NULL) return NULL;
+        size_t len = strlen(path);
+        path = (char*)realloc(path, len + sizeof(Save::FILE));
+        if (path == NULL) return NULL;
+        strcpy(path+len, Save::FILE);
+        return path;
+    }
+    bool openSaveReader(void) {
+        char *file = getSaveFile();
+        if (file == NULL) return false;
+        rw = SDL_RWFromFile(file, "r+b");
+        printf("%s\n", file);
+        fflush(stdout);
+        SDL_free(file);
+        return rw != NULL;
+    }
+    bool openSaveWriter(void) {
+        char *file = getSaveFile();
+        if (file == NULL) return false;
+        rw = SDL_RWFromFile(file, "w+b");
+        SDL_free(file);
+        return rw != NULL;
+    }
+    Uint8 readByte(void) {
+        return SDL_ReadU8(rw);
+    }
+    int writeByte(Uint8 value) {
+        return SDL_WriteU8(rw, value);
+    }
+    void closeSaveFile(void) {
+        SDL_RWclose(rw);
+        rw = NULL;
+    }
+#endif
+}
+
+
 struct Quad { int l, r, t, b; };
 
 class DetonationParticle {
@@ -383,7 +436,6 @@ void Game::OnUpdate(double dt) {
 }
 
 Game::~Game() {
-    SDL_free(saveDirectory);
     Tile::free();
     for (int i = 0; i < SoundEffects::COUNT; ++i) {
         Mix_FreeChunk(sounds[i]);
@@ -396,7 +448,6 @@ Game::Game(SDL_Window *window)
     , cols(Difficulty::SIZES[1].cols)
     , board(rows, std::vector<Tile>(cols))
     , rng(std::random_device{}())
-    , saveDirectory(SDL_GetPrefPath("grassdne", "sdlminesweeper"))
     , mainFont("assets/fonts/Arbutus-Regular.ttf")
     , window(window)
     , title(mainFont.raw(), "Minesweeper")
@@ -406,13 +457,6 @@ Game::Game(SDL_Window *window)
     , currentHover(nullptr)
     , activeBtn(-1)
 {
-    if (saveDirectory == NULL) {
-        printf("Error getting save directory: %s\n", SDL_GetError());
-    }
-    else {
-        printf("Save directory: %s\n", saveDirectory);
-    }
-
     loadMedia();
 }
 
@@ -458,74 +502,70 @@ void Game::ready() {
     state = GameState::READY;
 }
 
-namespace Save {
-    char HEADER[] = "MINE ";
-    const char *FILE = "data.bin";
-}
-
 void Game::save() {
-    std::string file = std::string(saveDirectory) + Save::FILE;
-
-    SDL_RWops* out = SDL_RWFromFile(file.c_str(), "w+b");
-
-    SDL_RWwrite(out, Save::HEADER, 1, sizeof(Save::HEADER) - 1);
-
-    SDL_WriteU8(out, 'r');
-    SDL_WriteU8(out, (Uint8)rows);
-    SDL_WriteU8(out, 'c');
-    SDL_WriteU8(out, (Uint8)cols);
-
-    SDL_WriteU8(out, 'g');
-    SDL_WriteU8(out, (Uint8)state);
-
-    for (auto& row : board) for (auto& tile : row) {
-        SDL_WriteU8(out, 't');
-        SDL_WriteU8(out, tile.save());
+    if (!openSaveWriter()) {
+        puts("unable to write to save file");
+        return;
     }
 
-    SDL_WriteU8(out, '\0');
-    SDL_RWclose(out);
+    for (size_t i = 0; i < sizeof(Save::HEADER)-1; ++i) {
+        writeByte(Save::HEADER[i]);
+    }
+
+    writeByte('r');
+    writeByte((Uint8)rows);
+    writeByte('c');
+    writeByte((Uint8)cols);
+
+    writeByte('g');
+    writeByte((Uint8)state);
+
+    for (auto& row : board) for (auto& tile : row) {
+        writeByte('t');
+        writeByte(tile.save());
+    }
+
+    writeByte('\0');
+    closeSaveFile();
 }
 
 void Game::load() {
-    std::string file = std::string(saveDirectory) + Save::FILE;
-
-    SDL_RWops* in = SDL_RWFromFile(file.c_str(), "r+b");
-    if (in == NULL) {
+    if (!openSaveReader()) {
+        printf("no save file found\n");
         return;
     }
     for (char *c = Save::HEADER; *c != '\0'; ++c) {
-        Uint8 u8 = SDL_ReadU8(in);
+        Uint8 u8 = readByte();
         if (u8 != *c) {
             printf("Invalid or corrupted save file! Missing header.\n");
         }
     }
     Uint8 data;
-    if ((data = SDL_ReadU8(in)) != 'r') {
+    if ((data = readByte()) != 'r') {
         printf("Missing rows data :: expected r (%d) got (%d)\n", 'r', data);
         return;
     }
-    rows = SDL_ReadU8(in);
+    rows = readByte();
 
-    if (SDL_ReadU8(in) != 'c') {
+    if (readByte() != 'c') {
         printf("Missing cols data\n");
         return;
     }
-    cols = SDL_ReadU8(in);
+    cols = readByte();
     resizeBoard();
 
-    if (SDL_ReadU8(in) != 'g') {
+    if (readByte() != 'g') {
         printf("Missing game state\n");
         return;
     }
-    state = SDL_ReadU8(in);
+    state = readByte();
 
     tileDatas.resize(rows*cols, TileSaveData::DEFAULT);
-    for (int i = 0; (data = SDL_ReadU8(in)) == 't'; i++) {
-        tileDatas[i] = SDL_ReadU8(in);
+    for (int i = 0; (data = readByte()) == 't'; i++) {
+        tileDatas[i] = readByte();
     }
 
-    SDL_RWclose(in);
+    closeSaveFile();
 }
 
 void Game::resizeBoard() {
