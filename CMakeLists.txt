@@ -2,12 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project (sdlminesweeper)
 
-# awkward...    what am I supposed to do on windows :/
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:\\mingw_dev\\lib")
-
 find_package(SDL2 REQUIRED)
 
-# These packages arent on UNIX
+# There aren't packages for these on Unix
 if (WIN32)
     find_package(SDL2_ttf)
     find_package(SDL2_image)
@@ -15,10 +12,6 @@ if (WIN32)
 endif()
 
 set (CMAKE_CXX_STANDARD 17)
-
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE, Release)
-endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -50,18 +43,11 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 
 set(RUNTIME_BASE_PATH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/")
 
-include(CMakePrintHelpers)
-cmake_print_variables(RUNTIME_BASE_PATH)
+message(STATUS "RUNTIME BASE PATH: ${RUNTIME_BASE_PATH}")
+message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 
 add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
 
-install(TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}")
+install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(DIRECTORY assets DESTINATION share/${PROJECT_NAME})
-
-if (WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>
-        COMMAND_EXPAND_LISTS
-    )
-endif()
+##install(DIRECTORY $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> DESTINATION bin)
