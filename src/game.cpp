@@ -4,6 +4,7 @@
 #include "app.h"
 #include "color.h"
 #include <assert.h>
+#include <cstring>
 
 namespace Detonation {
     namespace Particle {
