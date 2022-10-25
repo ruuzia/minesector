@@ -121,7 +121,7 @@ extern "C" {
         char *file = getSaveFile();
         if (file == NULL) return false;
         rw = SDL_RWFromFile(file, "r+b");
-        printf("%s\n", file);
+        printf("Save file found: %s\n", file);
         fflush(stdout);
         SDL_free(file);
         return rw != NULL;
@@ -888,7 +888,7 @@ void Game::loadMedia() {
     }
 
     for (int i = 0; i < SoundEffects::COUNT; ++i) {
-        sounds[i] = Mix_LoadWAV(SOUND_FILES[i].c_str());
+        sounds[i] = Mix_LoadWAV((Sim.runtimeBasePath + SOUND_FILES[i]).c_str());
         if (sounds[i] == nullptr) {
             throw std::runtime_error("Failed to load sound:" + std::string(Mix_GetError()));
         }

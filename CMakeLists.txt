@@ -47,3 +47,21 @@ elseif (WIN32)
 endif()
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+set(RUNTIME_BASE_PATH "${CMAKE_INSTALL_PREFIX}/share/${PROJECT_NAME}/")
+
+include(CMakePrintHelpers)
+cmake_print_variables(RUNTIME_BASE_PATH)
+
+add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
+
+install(TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}")
+install(DIRECTORY assets DESTINATION share/${PROJECT_NAME})
+
+if (WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>
+        COMMAND_EXPAND_LISTS
+    )
+endif()

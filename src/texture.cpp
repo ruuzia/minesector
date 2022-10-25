@@ -50,7 +50,7 @@ void Texture::loadFile(std::string& path) {
     free();
 
     // Directly load image to texture
-    texture = IMG_LoadTexture(renderer, path.c_str());
+    texture = IMG_LoadTexture(renderer, (Sim.runtimeBasePath + path).c_str());
     if (texture == nullptr) {
         throw std::runtime_error("Unable to create texture from image " + path + ". SDL_image error: " + std::string(IMG_GetError()));
     }

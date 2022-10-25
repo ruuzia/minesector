@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 #include "SDL_render.h"
+#include <string>
 
 #define SECONDS() (SDL_GetTicks() * 0.001)
 
@@ -17,6 +18,7 @@ public:
     bool isFullscreen;
     void init();
     SDL_Window *window;
+    std::string runtimeBasePath;
 };
 
 extern App Sim;
