@@ -109,31 +109,29 @@ extern "C" {
 
 #ifndef __EMSCRIPTEN__
     static SDL_RWops *rw;
-    static char* getSaveFile(void) {
-        char* path = SDL_GetPrefPath("grassdne", "sdlminesweeper");
-        if (path == NULL) return NULL;
-        size_t len = strlen(path);
-        path = (char*)realloc(path, len + sizeof(Save::FILE));
-        if (path == NULL) return NULL;
-        strcpy(path+len, Save::FILE);
-        return path;
-    }
-    bool openSaveReader(void) {
-        char *file = getSaveFile();
-        if (file == NULL) return false;
-        rw = SDL_RWFromFile(file, "r+b");
-        printf("Save file found: %s\n", file);
-        fflush(stdout);
-        SDL_free(file);
-        return rw != NULL;
-    }
-    bool openSaveWriter(void) {
-        char *file = getSaveFile();
-        if (file == NULL) return false;
-        rw = SDL_RWFromFile(file, "w+b");
-        SDL_free(file);
-        return rw != NULL;
-    }
+    static std::string* getSaveFile(void) {
+        char* dir = SDL_GetPrefPath("grassdne", "sdlminesweeper");
+        if (dir == NULL) return NULL;
+        std::string *file = new std::string(std::string(dir)+Save::FILE);
+        SDL_free(dir);
+        return file;
+     }
+     bool openSaveReader(void) {
+        std::string *file = getSaveFile();
+         if (file == NULL) return false;
+         rw = SDL_RWFromFile(file->c_str(), "r+b");
+         printf("%s\n", file->c_str());
+         fflush(stdout);
+         free(file);
+         return rw != NULL;
+     }
+     bool openSaveWriter(void) {
+         std::string *file = getSaveFile();
+         if (file == NULL) return false;
+         rw = SDL_RWFromFile(file->c_str(), "w+b");
+         free(file);
+         return rw != NULL;
+     }
     Uint8 readByte(void) {
         return SDL_ReadU8(rw);
     }
