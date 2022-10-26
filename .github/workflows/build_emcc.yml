@@ -26,4 +26,4 @@ jobs:
         actions-cache-folder: 'emsdk-cache'
     
     - name: Build
-      run: ./build_emcc
+      run: ./build_emcc.sh
