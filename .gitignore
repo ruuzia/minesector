@@ -16,3 +16,4 @@ Sessionx.vim
 cmake-build-*
 .idea/*
 *.bin
+install_manifest.txt
