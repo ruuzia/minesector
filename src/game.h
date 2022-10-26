@@ -37,8 +37,6 @@ public:
     Game(SDL_Window *window);
     ~Game();
 
-    int state;
-
     // Renderer and window are global
 
     void loadMedia();
@@ -71,6 +69,8 @@ public:
     static Mix_Chunk* sounds[SoundEffects::COUNT];
 
     Font mainFont;
+
+    int state;
 private:
     SDL_Window *window;
 
