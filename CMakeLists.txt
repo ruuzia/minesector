@@ -16,7 +16,9 @@ set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-attributes")
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+if (WIN32)
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+endif()
 
 set(SOURCES
     src/main.cpp
@@ -56,6 +58,8 @@ add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(DIRECTORY assets DESTINATION share/${PROJECT_NAME} USE_SOURCE_PERMISSIONS)
+install(FILES ${PROJECT_NAME}.desktop DESTINATION share/applications)
+install(FILES appicon.png RENAME ${PROJECT_NAME}.png DESTINATION share/pixmaps)
 
 if (WIN32 AND CMAKE_BUILD_TYPE MATCHES Release)
     install(DIRECTORY $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> DESTINATION bin)
@@ -63,11 +67,10 @@ if (WIN32 AND CMAKE_BUILD_TYPE MATCHES Release)
 endif()
 
 set(CPACK_PACKAGE_NAME "Minesweeper")
-set(CPACK_PACKAGE_FILE_NAME "sdlminesweeper-win32-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_FILE_NAME "sdlminesweeper-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "sdlminesweeper")
 # set(CPACK_PACKAGE_VENDOR "grassdne")
 set(CPACK_PACKAGE_EXECUTABLES "sdlminesweeper" "Minesweeper")
-set(CPACK_GENERATOR "WIX")
 set(CPACK_CREATE_DESKTOP_LINKS "sdlminesweeper")
 set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}\\\\appicon.ico")
 set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}\\\\appicon.ico")
