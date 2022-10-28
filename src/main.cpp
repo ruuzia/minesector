@@ -42,6 +42,16 @@ App::~App() {
 }
 
 void App::init() {
+    const char *env_runtimepath = std::getenv("MINERUNTIME");
+    if (env_runtimepath) {
+        runtimeBasePath = std::string(env_runtimepath);
+    } else {
+        char *exedir = SDL_GetBasePath();
+        runtimeBasePath = std::string(exedir) + std::string(RUNTIME_BASE_PATH);
+        free(exedir);
+    }
+    printf("Runtime path: %s\n", runtimeBasePath.c_str()); fflush(stdout);
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         throw std::runtime_error("SDL could not initialize! SDL Error: " + std::string(SDL_GetError()));
     }
@@ -70,14 +80,6 @@ void App::init() {
     }
 
     SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    const char *env_runtimepath = std::getenv("MINERUNTIME");
-    if (env_runtimepath) {
-        runtimeBasePath = std::string(env_runtimepath);
-    } else {
-        runtimeBasePath = std::string(RUNTIME_BASE_PATH);
-    }
-    printf("Runtime path: %s\n", runtimeBasePath.c_str());
 }
 
 constexpr int FPS = 60;
