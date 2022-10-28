@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project (sdlminesweeper)
+project (sdlminesweeper VERSION 1.1.0)
 
 find_package(SDL2 REQUIRED)
 
@@ -30,7 +30,9 @@ set(SOURCES
     src/tile.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/appicon.rc")
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${WINDOWS_APP_ICON})
 
 if (UNIX)
     include_directories(${SDL2_INCLUDE_DIRS})
@@ -46,6 +48,9 @@ set(RUNTIME_BASE_PATH "../share/${PROJECT_NAME}/")
 
 message(STATUS "RUNTIME BASE PATH: ${RUNTIME_BASE_PATH}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+message(STATUS "PROJECT_VERSION: ${PROJECT_VERSION}")
+message(STATUS "PROJECT_VERSION_MAJOR: ${PROJECT_VERSION_MAJOR}")
+message(STATUS "PROJECT_VERSION_MINOR: ${PROJECT_VERSION_MINOR}")
 
 add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
 
@@ -58,7 +63,12 @@ if (WIN32 AND CMAKE_BUILD_TYPE MATCHES Release)
 endif()
 
 set(CPACK_PACKAGE_NAME "Minesweeper")
-set(CPACK_PACKAGE_FILE_NAME "sdlminesweeper")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY ${CPACK_PACKAGE_FILE_NAME})
+set(CPACK_PACKAGE_FILE_NAME "sdlminesweeper-win32-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "sdlminesweeper")
+# set(CPACK_PACKAGE_VENDOR "grassdne")
+set(CPACK_PACKAGE_EXECUTABLES "sdlminesweeper" "Minesweeper")
 set(CPACK_GENERATOR "WIX")
+set(CPACK_CREATE_DESKTOP_LINKS "sdlminesweeper")
+set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}\\\\appicon.ico")
+set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}\\\\appicon.ico")
 include(CPack)
