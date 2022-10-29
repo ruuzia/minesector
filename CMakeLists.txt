@@ -32,7 +32,7 @@ set(SOURCES
     src/tile.cpp
 )
 
-set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/appicon.rc")
+set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.rc")
 
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${WINDOWS_APP_ICON})
 
@@ -64,8 +64,8 @@ file(GLOB DATA_IMAGES "${PROJECT_SOURCE_DIR}/assets/images/*")
 file(GLOB DATA_SOUNDS "${PROJECT_SOURCE_DIR}/assets/sounds/*")
 
 set(MACOSX_BUNDLE_ICON_FILE appicon.icns) # Don't include the full path
-target_sources(${PROJECT_NAME} PRIVATE ${DATA_FONTS} ${DATA_IMAGES} ${DATA_SOUNDS} appicon.icns)
-set_source_files_properties(appicon.icns   PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+target_sources(${PROJECT_NAME} PRIVATE ${DATA_FONTS} ${DATA_IMAGES} ${DATA_SOUNDS} icons/appicon.icns)
+set_source_files_properties(icons/appicon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 set_source_files_properties(${DATA_FONTS}  PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/fonts)
 set_source_files_properties(${DATA_IMAGES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/images)
 set_source_files_properties(${DATA_SOUNDS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/sounds)
@@ -84,7 +84,7 @@ if (NOT APPLE)
     if (UNIX)
         # Linux app icon
         install(FILES ${PROJECT_NAME}.desktop DESTINATION share/applications)
-        install(FILES appicon.png RENAME ${PROJECT_NAME}.png DESTINATION share/pixmaps)
+        install(FILES icons/appicon.png RENAME ${PROJECT_NAME}.png DESTINATION share/pixmaps)
     endif()
 endif()
 
@@ -99,8 +99,8 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "sdlminesweeper")
 # set(CPACK_PACKAGE_VENDOR "grassdne")
 set(CPACK_PACKAGE_EXECUTABLES "sdlminesweeper" "Minesweeper")
 set(CPACK_CREATE_DESKTOP_LINKS "sdlminesweeper")
-set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/appicon.png")
-set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}\\\\appicon.ico")
+set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.png")
+set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/icons\\\\appicon.ico")
 set(CPACK_PRODUCTBUILD_RESOURCES_DIR "assets")
 set(CPACK_WIX_UPGRADE_GUID "66D7287B-D720-4920-9C0D-DB8CD2DC378A")
 
