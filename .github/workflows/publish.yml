@@ -7,8 +7,8 @@ on:
       - '*'
 
 jobs:
-  build:
-    name: Publish
+  publish:
+    name: Publish Linux
     runs-on: ubuntu-22.04
 
     steps:
@@ -21,12 +21,12 @@ jobs:
       run: cmake . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
-      run: make
+      run: make -j
 
-    - name: Pack into DEB
-      run: cpack -G DEB
+    - name: Pack deb and rpm
+      run: cpack -G "DEB;RPM"
       
-    - name: Upload binaries to release
+    - name: Upload DEB
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,5 +35,13 @@ jobs:
         # temp hardcode tag for debugging
         # tag: ${{ github.ref }}
         tag: "1.1.0"
-        overwrite: true
-        body: "Release binaries."
+      
+    - name: Upload RPM
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: sdlminesweeper.rpm
+        asset_name: sdlminesweeper-linux64.rpm
+        # temp hardcode tag for debugging
+        # tag: ${{ github.ref }}
+        tag: "1.1.0"
