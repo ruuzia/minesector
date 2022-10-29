@@ -70,7 +70,9 @@ set_source_files_properties(${DATA_FONTS}  PROPERTIES MACOSX_PACKAGE_LOCATION Re
 set_source_files_properties(${DATA_IMAGES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/images)
 set_source_files_properties(${DATA_SOUNDS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/sounds)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Minesweeper")
+if (APPLE)       # MacOS app name
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Minesweeper")
+endif()
 
 add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
 
