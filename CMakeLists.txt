@@ -105,7 +105,7 @@ set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/icons\\\\appicon.ico")
 set(CPACK_PRODUCTBUILD_RESOURCES_DIR "assets")
 set(CPACK_WIX_UPGRADE_GUID "66D7287B-D720-4920-9C0D-DB8CD2DC378A")
 set(CPACK_PACKAGE_CONTACT "https://github.com/grassdne/sdlminesweeper")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libm, libc, libstdc++, libSDL2 (>= 2.0.18), libsdl2-ttf, libsdl2-mixer, libsdl2-image")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl2-2.0-0 (>= 2.0.18), libsdl2-ttf-2.0-0, libsdl2-mixer-2.0-0, libsdl2-image-2.0-0")
 set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.txt")
 
 if (APPLE)
