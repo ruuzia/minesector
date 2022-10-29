@@ -9,13 +9,20 @@ find_package(SDL2_mixer)
 
 set (CMAKE_CXX_STANDARD 17)
 
+if (APPLE AND CMAKE_BUILD_TYPE MATCHES Release)
+    # Statically link on MacOS
+    set(STATIC_LINK 1)
+endif()
+
 # FLAGS
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-attributes")
 if (WIN32)
-    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wl,-subsystem,windows")
+endif()
+if (WIN32 OR STATIC_LINK)
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 endif()
 
 set(SOURCES
@@ -33,11 +40,6 @@ set(SOURCES
 set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.rc")
 
 add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${WINDOWS_APP_ICON})
-
-if (APPLE AND CMAKE_BUILD_TYPE MATCHES Release)
-    # Statically link on MacOS
-    set(STATIC_LINK 1)
-endif()
 
 if (STATIC_LINK)
     target_link_libraries(${PROJECT_NAME} SDL2::SDL2-static SDL2_image::SDL2_image-static SDL2_ttf::SDL2_ttf-static SDL2_mixer::SDL2_mixer-static)
