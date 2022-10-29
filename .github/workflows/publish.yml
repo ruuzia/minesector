@@ -32,6 +32,7 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: sdlminesweeper.deb
         asset_name: sdlminesweeper-linux64.deb
+        overwrite: true
         # temp hardcode tag for debugging
         # tag: ${{ github.ref }}
         tag: "1.1.0"
@@ -42,6 +43,7 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: sdlminesweeper.rpm
         asset_name: sdlminesweeper-linux64.rpm
+        overwrite: true
         # temp hardcode tag for debugging
         # tag: ${{ github.ref }}
         tag: "1.1.0"
