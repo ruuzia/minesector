@@ -25,6 +25,10 @@ jobs:
 
     - name: Pack into DEB
       run: cpack -G DEB
+
+    - name: Get Tag
+      run: |
+        echo "TAG=$(git describe --tags)" >> $GITHUB_ENV
       
     - name: Upload binaries to release
       uses: svenstaro/upload-release-action@v2
@@ -32,6 +36,6 @@ jobs:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: sdlminesweeper.deb
         asset_name: sdlminesweeper-linux64.deb
-        tag: ${{ github.ref }}
+        tag: ${{ env.TAG }}
         overwrite: true
         body: "Release binaries."
