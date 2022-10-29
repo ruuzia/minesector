@@ -70,7 +70,9 @@ set_source_files_properties(${DATA_FONTS}  PROPERTIES MACOSX_PACKAGE_LOCATION Re
 set_source_files_properties(${DATA_IMAGES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/images)
 set_source_files_properties(${DATA_SOUNDS} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/sounds)
 
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Minesweeper")
+if (APPLE)       # MacOS app name
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "Minesweeper")
+endif()
 
 add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
 
@@ -94,15 +96,16 @@ if (WIN32 AND CMAKE_BUILD_TYPE MATCHES Release)
 endif()
 
 set(CPACK_PACKAGE_NAME "Minesweeper")
-set(CPACK_PACKAGE_FILE_NAME "sdlminesweeper-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_FILE_NAME "sdlminesweeper")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "sdlminesweeper")
-# set(CPACK_PACKAGE_VENDOR "grassdne")
 set(CPACK_PACKAGE_EXECUTABLES "sdlminesweeper" "Minesweeper")
 set(CPACK_CREATE_DESKTOP_LINKS "sdlminesweeper")
 set(CPACK_PACKAGE_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.png")
 set(CPACK_WIX_PRODUCT_ICON "${PROJECT_SOURCE_DIR}/icons\\\\appicon.ico")
 set(CPACK_PRODUCTBUILD_RESOURCES_DIR "assets")
 set(CPACK_WIX_UPGRADE_GUID "66D7287B-D720-4920-9C0D-DB8CD2DC378A")
+set(CPACK_PACKAGE_CONTACT "https://github.com/grassdne/sdlminesweeper")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libm, libc, libstdc++, libSDL2 (>= 2.0.18), libsdl2-ttf, libsdl2-mixer, libsdl2-image")
 
 if (APPLE)
     set(CPACK_GENERATOR "DragNDrop")
