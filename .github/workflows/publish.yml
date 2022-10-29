@@ -28,6 +28,7 @@ jobs:
 
     - name: Get Tag
       run: |
+        echo "Using tag: $(git describe --tags)"
         echo "TAG=$(git describe --tags)" >> $GITHUB_ENV
       
     - name: Upload binaries to release
