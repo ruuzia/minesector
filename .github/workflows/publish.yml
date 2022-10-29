@@ -6,8 +6,13 @@ on:
     tags:
       - '*'
 
+env:
+  # temp hardcode tag for debugging
+  # TAG: ${{ github.ref }}
+  TAG: "1.1.0"
+
 jobs:
-  publish:
+  publish-linux:
     name: Publish Linux
     runs-on: ubuntu-22.04
 
@@ -33,9 +38,7 @@ jobs:
         file: sdlminesweeper.deb
         asset_name: sdlminesweeper-linux64.deb
         overwrite: true
-        # temp hardcode tag for debugging
-        # tag: ${{ github.ref }}
-        tag: "1.1.0"
+        tag: ${{ env.TAG }}
       
     - name: Upload RPM
       uses: svenstaro/upload-release-action@v2
@@ -46,4 +49,34 @@ jobs:
         overwrite: true
         # temp hardcode tag for debugging
         # tag: ${{ github.ref }}
-        tag: "1.1.0"
+        tag: ${{ env.TAG }}
+
+  publish-macos:
+    name: Publish MacOS
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install dependencies
+      run: sudo brew install install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+    
+    - name: Configure CMake
+      run: cmake . -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: make -j
+
+    - name: Pack Drag & Drop
+      run: cpack -G "DragNDrop"
+      
+    - name: Upload package
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: sdlminesweeper.dmg
+        asset_name: sdlminesweeper-macos.dmg
+        overwrite: true
+        # temp hardcode tag for debugging
+        # tag: ${{ github.ref }}
+        tag: ${{ env.TAG }} 
