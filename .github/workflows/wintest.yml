@@ -10,8 +10,9 @@ jobs:
     steps:
     - name: Dump
       run: |
+        choco install mingw
         ls C:/
         gcc --version
         g++ --version
         $env:PATH
-        ls "C:/Program Files/Git/mingw64/bin"
+        ls "C:/ProgramData/chocolatey/bin"
