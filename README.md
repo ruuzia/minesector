@@ -1,6 +1,6 @@
-## Minesweeper
+## MineSector
 
-Pretty classic Minesweeper. Web Demo deployed [here](https://grassdne.github.io/sdlminesweeper/)!
+Pretty classic Minesweeper. Web Demo deployed [here](https://grassdne.github.io/minesector/)!
 
 ![game](example.png)
 
@@ -26,12 +26,12 @@ Built on Unix with Clang or GCC and Windows with MinGW.
   
 2. Build source code
 ```console
-$ git clone https://github.com/grassdne/sdlminesweeper.git
-$ cd sdlminesweeper
+$ git clone https://github.com/grassdne/minesector.git
+$ cd minesector
 $ ./configure
 $ make -j
 $ sudo make install
-$ sdlminesweeper
+$ minesector
 ```
 ./configure is currently equivalent to running `cmake -DCMAKE_BUILD_TYPE=Release`. To specify an installation location, set -DCMAKE_INSTALL_PREFIX in the configure step:
 ```console
@@ -39,6 +39,6 @@ $ ./configure -DCMAKE_INSTALL_PREFIX=./build
 ```
 To run the program without `make install`, you must set the MINERUNTIME environment variable to the source directory so it knows where to find assets. Inside the git repo:
 ```console
-$ MINERUNTIME="" ./sdlminesweeper
+$ MINERUNTIME="" ./minesector
 ```
 The `-j` argument to `make` just tells make to run in parallel and is not required.

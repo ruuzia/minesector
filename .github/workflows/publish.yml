@@ -6,9 +6,14 @@ on:
     tags:
       - '*'
 
+env:
+  # temp hardcode tag for debugging
+  # TAG: ${{ github.ref }}
+  TAG: "1.1.0"
+
 jobs:
-  build:
-    name: Publish
+  publish-linux:
+    name: Publish Linux
     runs-on: ubuntu-22.04
 
     steps:
@@ -21,17 +26,57 @@ jobs:
       run: cmake . -DCMAKE_BUILD_TYPE=Release
 
     - name: Build
-      run: make
+      run: make -j
 
-    - name: Pack into DEB
-      run: cpack -G DEB
+    - name: Pack deb and rpm
+      run: cpack -G "DEB;RPM"
       
-    - name: Upload binaries to release
+    - name: Upload DEB
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: sdlminesweeper.deb
-        asset_name: sdlminesweeper-linux64.deb
-        tag: ${{ github.ref }}
+        file: minesector.deb
+        asset_name: minesector-linux64.deb
         overwrite: true
-        body: "Release binaries."
+        tag: ${{ env.TAG }}
+      
+    - name: Upload RPM
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: minesector.rpm
+        asset_name: minesector-linux64.rpm
+        overwrite: true
+        # temp hardcode tag for debugging
+        # tag: ${{ github.ref }}
+        tag: ${{ env.TAG }}
+
+  publish-macos:
+    name: Publish MacOS
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Install dependencies
+      run: brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+    
+    - name: Configure CMake
+      run: cmake . -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: make -j
+
+    - name: Pack Drag & Drop
+      run: cpack -G "DragNDrop"
+      
+    - name: Upload package
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: minesector.dmg
+        asset_name: minesector-macos.dmg
+        overwrite: true
+        # temp hardcode tag for debugging
+        # tag: ${{ github.ref }}
+        tag: ${{ env.TAG }} 
