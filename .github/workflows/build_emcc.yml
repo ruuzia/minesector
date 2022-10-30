@@ -13,10 +13,11 @@ jobs:
 
     - name: Sync
       uses: devmasx/merge-branch@master
-      with: type: now
-      from_branch: master
-      target_branch: pages
-      github_token: ${{ github.token }}
+      with:
+        type: now
+        from_branch: master
+        target_branch: pages
+        github_token: ${{ github.token }}
     
     - name: Setup emsdk
       uses: mymindstorm/setup-emsdk@v11
