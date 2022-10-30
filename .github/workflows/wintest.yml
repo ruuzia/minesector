@@ -22,14 +22,19 @@ jobs:
 
     - name: Install SDL2 mingw libs
       run: |
-        wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
-        unzip.exe SDL2.zip
-        wget.exe "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip" -o SDL2_image.zip
-        unzip.exe SDL2_image.zip
-        wget.exe "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip" -o SDL2_ttf.zip
-        unzip.exe SDL2_ttf.zip
-        wget.exe "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip" -o SDL2_mixer.zip
-        unzip.exe SDL2_mixer.zip
+        $env:SDL2_FILE       = "SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip"
+        $env:SDL2_IMAGE_FILE = "SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip"
+        $env:SDL2_MIXER_FILE = "SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip"
+        $env:SDL2_TTF_FILE   = "SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip"
+
+        wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/${env:SDL2_FILE}"
+        unzip.exe $env:SDL2_FILE
+        wget.exe "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/${env:SDL2_IMAGE_FILE}"
+        unzip.exe $env:SDL2_IMAGE_FILE
+        wget.exe "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/${env:SDL2_TTF_FILE}"
+        unzip.exe $env:SDL2_TTF_FILE
+        wget.exe "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/${env:SDL2_MIXER_FILE}"
+        unzip.exe $env:SDL2_MIXER_FILE
         rm *.zip
 
     - name: Configure
