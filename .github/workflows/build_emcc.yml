@@ -8,7 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout pages branch
+      uses: actions/checkout@v3
       ref: pages
 
     - name: Sync
