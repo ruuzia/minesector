@@ -115,7 +115,7 @@ jobs:
 
     - name: Configure
       run: |
-        cmake . -DCMAKE_BUILD_TYPE=${{env.WINBUILDTYPE}} -G Ninja -DCMAKE_C_COMPILER=C:/MinGW/bin/gcc -DCMAKE_CXX_COMPILER="C:/MinGW/bin/g++" -DCMAKE_PREFIX_PATH="./SDL2-${{env.SDL2_VERSION}}/cmake/;./SDL2_image-${{env.SDL2_IMAGE_VERSION}}/cmake/;./SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/cmake/;./SDL2_ttf-${{env.SDL2_TTF_VERSION}}/cmake/;"
+        cmake . -DCMAKE_BUILD_TYPE=${{env.WINBUILDTYPE}} -G Ninja -DCMAKE_C_COMPILER=gcc.exe -DCMAKE_CXX_COMPILER=g++.exe -DCMAKE_PREFIX_PATH="./SDL2-${{env.SDL2_VERSION}}/cmake/;./SDL2_image-${{env.SDL2_IMAGE_VERSION}}/cmake/;./SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/cmake/;./SDL2_ttf-${{env.SDL2_TTF_VERSION}}/cmake/;"
 
     - name: Build
       run: ninja
