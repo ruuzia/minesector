@@ -10,7 +10,8 @@ jobs:
     steps:
     - name: Checkout pages branch
       uses: actions/checkout@v3
-      ref: pages
+      with:
+        ref: pages
 
     - name: Sync
       uses: devmasx/merge-branch@master
