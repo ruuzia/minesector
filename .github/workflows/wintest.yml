@@ -39,11 +39,11 @@ jobs:
     - name: Configure
       run: >
         cmake . -DCMAKE_BUILD_TYPE=Release
-                -G Ninja -DCMAKE_C_COMPILER=gcc
-                -DCMAKE_PREFIX_PATH="./SDL2-${{env.SDL2_VERSION}}/x86_64-w64-mingw32/;
-                                     ./SDL2_image-${{env.SDL2_IMAGE_VERSION}}/x86_64-w64-mingw32/;
-                                     ./SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/x86_64-w64-mingw32/;
-                                     ./SDL2_ttf-${{env.SDL2_TTF_VERSION}}/x86_64-w64-mingw32;"
+        -G Ninja -DCMAKE_C_COMPILER=gcc
+        -DCMAKE_PREFIX_PATH="./SDL2-${{env.SDL2_VERSION}}/x86_64-w64-mingw32/;
+        ./SDL2_image-${{env.SDL2_IMAGE_VERSION}}/x86_64-w64-mingw32/;
+        ./SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/x86_64-w64-mingw32/;
+        ./SDL2_ttf-${{env.SDL2_TTF_VERSION}}/x86_64-w64-mingw32;"
 
     - name: Build
       run: ninja
