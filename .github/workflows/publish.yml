@@ -1,15 +1,12 @@
 name: Publish
 
 on:
-  workflow_dispatch: 
   push:
     tags:
       - '*'
 
 env:
-  # temp hardcode tag for debugging
-  # TAG: ${{ github.ref }}
-  TAG: "1.1.0"
+  TAG: ${{ github.ref }}
 
   # WINDOWS only
   SDL2_VERSION: 2.24.1
@@ -60,7 +57,7 @@ jobs:
 
   publish-macos:
     name: Publish MacOS
-    runs-on: macos-latest
+    runs-on: macos-11
 
     steps:
     - uses: actions/checkout@v2
