@@ -8,8 +8,8 @@ jobs:
     name: Build
     runs-on: windows-latest
 
-  steps:
-  - name: Test Software
-    run: |
-      mingw32-make --version
-      cmake --version
+    steps:
+    - name: Test Software
+      run: |
+        mingw32-make --version
+        cmake --version
