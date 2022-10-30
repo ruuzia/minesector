@@ -24,7 +24,7 @@ endif()
 if (WIN32 OR STATIC_LINK)
     set(CMAKE_EXE_LINKER_FLAGS "-static-libstdc++")
     if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc")
     endif()
 endif()
 
