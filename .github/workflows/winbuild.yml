@@ -1,4 +1,4 @@
-name: Win Test Build
+name: WinTestBuild
 
 on:
   workflow-dispatch:
