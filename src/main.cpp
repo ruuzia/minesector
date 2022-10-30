@@ -48,7 +48,7 @@ void App::init() {
     } else {
         char *exedir = SDL_GetBasePath();
         runtimeBasePath = std::string(exedir) + std::string(RUNTIME_BASE_PATH);
-        free(exedir);
+        SDL_free(exedir);
     }
     printf("Runtime path: %s\n", runtimeBasePath.c_str()); fflush(stdout);
 
