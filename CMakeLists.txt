@@ -102,7 +102,7 @@ endif()
 # Windows copy DLL's
 if (WIN32 AND CMAKE_BUILD_TYPE MATCHES Release)
     install(DIRECTORY $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> DESTINATION bin)
-    install(FILES "${SDL2_PREFIX}bin/SDL2.dll" DESTINATION bin)
+    install(FILES "${SDL2_PREFIX}/bin/SDL2.dll" DESTINATION bin)
 endif()
 
 set(CPACK_PACKAGE_NAME "MineSector")
