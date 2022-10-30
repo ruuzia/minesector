@@ -18,17 +18,17 @@ jobs:
 
     - name: Install dependencies
       run: |
-        choco install ninja
+        choco install ninja wget
 
     - name: Install SDL2 mingw libs
       run: |
-        . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
+        wget "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
         Expand-Archive SDL2.zip
-        . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip" -o SDL2_image.zip
+        wget "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip" -o SDL2_image.zip
         Expand-Archive SDL2_image.zip
-        . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip" -o SDL2_ttf.zip
+        wget "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip" -o SDL2_ttf.zip
         Expand-Archive SDL2_ttf.zip
-        . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip" -o SDL2_mixer.zip
+        wget "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip" -o SDL2_mixer.zip
         Expand-Archive SDL2_mixer.zip
         rm *.zip
 
@@ -42,5 +42,7 @@ jobs:
                                      ./SDL2_ttf/SDL2_ttf-${{env.SDL2_TTF_VERSION}}/x86_64-w64-mingw32;"
 
     - name: Build
-      run: |
-        ninja
+      run: ninja
+
+    - name: CPack msi installer
+      run: cpack
