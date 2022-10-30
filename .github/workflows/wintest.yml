@@ -10,5 +10,7 @@ jobs:
     steps:
     - name: Dump
       run: |
-        choco install mingw
         ls C:/
+        gcc --version
+        g++ --version
+        $env:PATH
