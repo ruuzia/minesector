@@ -18,28 +18,28 @@ jobs:
 
     - name: Install dependencies
       run: |
-        choco install ninja wget
+        choco install ninja wget unzip
 
     - name: Install SDL2 mingw libs
       run: |
         wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
-        Expand-Archive SDL2.zip
+        unzip.exe SDL2.zip
         wget.exe "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip" -o SDL2_image.zip
-        Expand-Archive SDL2_image.zip
+        unzip.exe SDL2_image.zip
         wget.exe "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip" -o SDL2_ttf.zip
-        Expand-Archive SDL2_ttf.zip
+        unzip.exe SDL2_ttf.zip
         wget.exe "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip" -o SDL2_mixer.zip
-        Expand-Archive SDL2_mixer.zip
+        unzip.exe SDL2_mixer.zip
         rm *.zip
 
     - name: Configure
       run: |
         cmake . -DCMAKE_BUILD_TYPE=Release \
                 -G Ninja -DCMAKE_C_COMPILER=gcc \
-                -DCMAKE_PREFIX_PATH="./SDL2/SDL2-${{env.SDL2_VERSION}}/x86_64-w64-mingw32/; \
-                                     ./SDL2_image/SDL2_image-${{env.SDL2_IMAGE_VERSION}}/x86_64-w64-mingw32/; \
-                                     ./SDL2_mixer/SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/x86_64-w64-mingw32/; \
-                                     ./SDL2_ttf/SDL2_ttf-${{env.SDL2_TTF_VERSION}}/x86_64-w64-mingw32;"
+                -DCMAKE_PREFIX_PATH="./SDL2-${{env.SDL2_VERSION}}/x86_64-w64-mingw32/; \
+                                     ./SDL2_image-${{env.SDL2_IMAGE_VERSION}}/x86_64-w64-mingw32/; \
+                                     ./SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/x86_64-w64-mingw32/; \
+                                     ./SDL2_ttf-${{env.SDL2_TTF_VERSION}}/x86_64-w64-mingw32;"
 
     - name: Build
       run: ninja
