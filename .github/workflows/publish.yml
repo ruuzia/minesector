@@ -11,6 +11,12 @@ env:
   # TAG: ${{ github.ref }}
   TAG: "1.1.0"
 
+  # WINDOWS only
+  SDL2_VERSION: 2.24.1
+  SDL2_IMAGE_VERSION: 2.6.2
+  SDL2_MIXER_VERSION: 2.6.2
+  SDL2_TTF_VERSION: 2.20.1
+
 jobs:
   publish-linux:
     name: Publish Linux
@@ -82,46 +88,38 @@ jobs:
         tag: ${{ env.TAG }} 
 
   publish-win64:
-    name: Build
+    name: Build Windows
     runs-on: windows-latest
 
-    defaults:
-      run:
-        shell: msys2 {0}
-
     steps:
-    - uses: msys2/setup-msys2@v2
-      with:
-        update: true
-        msystem: MINGW64
-        install: >-
-          git
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-ninja
-          mingw-w64-x86_64-SDL2
-          mingw-w64-x86_64-SDL2_image
-          mingw-w64-x86_64-SDL2_ttf
-          mingw-w64-x86_64-SDL2_mixer
-
     - uses: actions/checkout@v2
 
-    - name: Configure CMake
-      run: cmake -G Ninja . -DCMAKE_BUILD_TYPE=Release
+    - name: Install dependencies
+      run: choco install ninja wget unzip
+
+    - name: Install SDL2 mingw libs
+      run: |
+        $env:SDL2_FILE       = "SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip"
+        $env:SDL2_IMAGE_FILE = "SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip"
+        $env:SDL2_MIXER_FILE = "SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip"
+        $env:SDL2_TTF_FILE   = "SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip"
+
+        wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/${env:SDL2_FILE}"
+        wget.exe "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/${env:SDL2_IMAGE_FILE}"
+        wget.exe "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/${env:SDL2_TTF_FILE}"
+        wget.exe "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/${env:SDL2_MIXER_FILE}"
+        unzip.exe $env:SDL2_FILE
+        unzip.exe $env:SDL2_IMAGE_FILE
+        unzip.exe $env:SDL2_TTF_FILE
+        unzip.exe $env:SDL2_MIXER_FILE
+        rm *.zip
+
+    - name: Configure
+      run: |
+        cmake . -DCMAKE_BUILD_TYPE=Release -G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_PREFIX_PATH="./SDL2-${{env.SDL2_VERSION}}/x86_64-w64-mingw32/;./SDL2_image-${{env.SDL2_IMAGE_VERSION}}/x86_64-w64-mingw32/;./SDL2_mixer-${{env.SDL2_MIXER_VERSION}}/x86_64-w64-mingw32/;./SDL2_ttf-${{env.SDL2_TTF_VERSION}}/x86_64-w64-mingw32;"
 
     - name: Build
       run: ninja
 
-    - name: CPack
+    - name: CPack msi installer
       run: cpack
-
-    - name: Upload package
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: minesector.msi
-        asset_name: minesector-win64.msi
-        overwrite: true
-        # temp hardcode tag for debugging
-        # tag: ${{ github.ref }}
-        tag: ${{ env.TAG }} 
