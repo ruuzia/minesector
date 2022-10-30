@@ -46,6 +46,8 @@ add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${WINDOWS_APP_ICON})
 
 if (STATIC_LINK)
     target_link_libraries(${PROJECT_NAME} SDL2::SDL2-static SDL2_image::SDL2_image-static SDL2_ttf::SDL2_ttf-static SDL2_mixer::SDL2_mixer-static)
+elseif(WIN32)
+    target_link_libraries(${PROJECT_NAME} SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf SDL2_mixer::SDL2_mixer)
 else()
     target_link_libraries(${PROJECT_NAME} SDL2::SDL2 SDL2_image SDL2_ttf SDL2_mixer)
 endif()
