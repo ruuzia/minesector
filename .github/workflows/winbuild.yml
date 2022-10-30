@@ -1,15 +1,14 @@
-name: Publish
+name: Win Test Build
 
-on:
-  workflow-dispatch:
+on: workflow_dispatch
 
 jobs:
   build:
     name: Build
     runs-on: windows-latest
 
-  steps:
-  - name: Test Software
-    run: |
-      mingw32-make --version
-      cmake --version
+    steps:
+    - name: Test Software
+      run: |
+        mingw32-make --version
+        cmake --version
