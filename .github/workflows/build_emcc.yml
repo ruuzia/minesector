@@ -1,14 +1,25 @@
-name: Build Emscripten
-
+name: Build Emscripten and Publish Pages
 on:
-  page_build
+  push:
+    branches: [ "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout pages branch
+      uses: actions/checkout@v3
+      with:
+        ref: pages
+
+    - name: Sync
+      uses: devmasx/merge-branch@master
+      with:
+        type: now
+        from_branch: master
+        target_branch: pages
+        github_token: ${{ github.token }}
     
     - name: Setup emsdk
       uses: mymindstorm/setup-emsdk@v11
@@ -21,7 +32,7 @@ jobs:
         actions-cache-folder: 'emsdk-cache'
     
     - name: Build
-      run: ./build_emcc.sh
+      run: ./build_emcc.sh -O2
       
     - name: Commit files
       run: |
@@ -30,8 +41,9 @@ jobs:
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git commit -m "CI: Automated build push" -a | exit 0
+
     - name: Push changes
-      if: github.ref == 'refs/heads/master'
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git config pull.rebase false
+        git pull
+        git push
