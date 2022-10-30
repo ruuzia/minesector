@@ -1,0 +1,29 @@
+name: Windows Building
+
+on: workflow_dispatch
+
+env:
+  SDL2_VERSION: 2.24.1
+  SDL2_IMAGE_VERSION: 2.20.1
+  SDL2_TTF_VERSION: 2.20.1
+  SDL2_MIXER_VERSION: 2.6.2
+
+jobs:
+  build-win64:
+    name: Build Windows
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install SDL2 mingw libs
+      run: |
+        wget "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-$${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
+        Expand-Archive SDL2.zip
+      wget "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip" -o SDL2_image.zip
+        Expand-Archive SDL2_image.zip
+      wget "https://github.com/libsdl-org/SDL_ttf/releases/download/release-${{ env.SDL2_TTF_VERSION }}/SDL2_ttf-devel-${{ env.SDL2_TTF_VERSION }}-mingw.zip" -o SDL2_ttf.zip
+        Expand-Archive SDL2_ttf.zip
+      wget "https://github.com/libsdl-org/SDL_mixer/releases/download/release-${{ env.SDL2_MIXER_VERSION }}/SDL2_mixer-devel-${{ env.SDL2_MIXER_VERSION }}-mingw.zip" -o SDL2_mixer.zip
+        Expand-Archive SDL2_mixer.zip
+        rm *.zip
