@@ -35,8 +35,8 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: sdlminesweeper.deb
-        asset_name: sdlminesweeper-linux64.deb
+        file: minesector.deb
+        asset_name: minesector-linux64.deb
         overwrite: true
         tag: ${{ env.TAG }}
       
@@ -44,8 +44,8 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: sdlminesweeper.rpm
-        asset_name: sdlminesweeper-linux64.rpm
+        file: minesector.rpm
+        asset_name: minesector-linux64.rpm
         overwrite: true
         # temp hardcode tag for debugging
         # tag: ${{ github.ref }}
@@ -74,8 +74,8 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: sdlminesweeper.dmg
-        asset_name: sdlminesweeper-macos.dmg
+        file: minesector.dmg
+        asset_name: minesector-macos.dmg
         overwrite: true
         # temp hardcode tag for debugging
         # tag: ${{ github.ref }}
