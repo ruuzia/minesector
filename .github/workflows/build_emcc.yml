@@ -32,7 +32,7 @@ jobs:
         actions-cache-folder: 'emsdk-cache'
     
     - name: Build
-      run: ./build_emcc.sh
+      run: ./build_emcc.sh -O2
       
     - name: Commit files
       run: |
