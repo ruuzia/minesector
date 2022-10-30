@@ -53,8 +53,6 @@ jobs:
         file: minesector.rpm
         asset_name: minesector-linux64.rpm
         overwrite: true
-        # temp hardcode tag for debugging
-        # tag: ${{ github.ref }}
         tag: ${{ env.TAG }}
 
   publish-macos:
@@ -83,12 +81,10 @@ jobs:
         file: minesector.dmg
         asset_name: minesector-macos.dmg
         overwrite: true
-        # temp hardcode tag for debugging
-        # tag: ${{ github.ref }}
         tag: ${{ env.TAG }} 
 
   publish-win64:
-    name: Build Windows
+    name: Publish Windows
     runs-on: windows-latest
 
     steps:
@@ -123,3 +119,12 @@ jobs:
 
     - name: CPack msi installer
       run: cpack
+
+    - name: Upload package
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: minesector.msi
+        asset_name: minesector-win64.msi
+        overwrite: true
+        tag: ${{ env.TAG }} 
