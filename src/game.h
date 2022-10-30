@@ -74,7 +74,6 @@ public:
 private:
     SDL_Window *window;
 
-    Text title;
     Text flagCounter;
     TextButton restartBtn;
     TextButton playAgainBtn;

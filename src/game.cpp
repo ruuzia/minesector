@@ -110,7 +110,7 @@ extern "C" {
 #ifndef __EMSCRIPTEN__
     static SDL_RWops *rw;
     static std::string* getSaveFile(void) {
-        char* dir = SDL_GetPrefPath("grassdne", "sdlminesweeper");
+        char* dir = SDL_GetPrefPath("grassdne", "minesector");
         if (dir == NULL) return NULL;
         std::string *file = new std::string(std::string(dir)+Save::FILE);
         SDL_free(dir);
@@ -450,7 +450,6 @@ Game::Game(SDL_Window *window)
     , mainFont("assets/fonts/Arbutus-Regular.ttf")
     , state(GameState::READY)
     , window(window)
-    , title(mainFont.raw(), "Minesweeper")
     , flagCounter(mainFont.raw(), "0/? flags", 0xA00000)
     , restartBtn(mainFont.raw(), "Restart!", 0xFF1000)
     , playAgainBtn(mainFont.raw(), "Play again?", 0x00C000)
