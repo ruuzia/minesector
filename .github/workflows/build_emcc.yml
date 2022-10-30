@@ -1,7 +1,7 @@
-name: Build Emscripten
-
+name: Build Emscripten and Publish Pages
 on:
-  page_build
+  push:
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -9,6 +9,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      ref: 'pages'
+
+    - name: Sync
+      uses: devmasx/merge-branch@master
+      with: type: now
+      from_branch: master
+      target_branch: pages
+      github_token: ${{ github.token }}
     
     - name: Setup emsdk
       uses: mymindstorm/setup-emsdk@v11
