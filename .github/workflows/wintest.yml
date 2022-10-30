@@ -14,3 +14,4 @@ jobs:
         gcc --version
         g++ --version
         $env:PATH
+      ls "C:/Program Files/Git/mingw64/bin"
