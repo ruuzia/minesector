@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(CMAKE_OSX_SYSROOT macosx10.15)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
 
 project (minesector VERSION 1.1.0)
