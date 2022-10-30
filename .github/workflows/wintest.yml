@@ -16,9 +16,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Install dependencies
+
     - name: Install SDL2 mingw libs
       run: |
-        . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-$${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
+        . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL/releases/download/release-${{env.SDL2_VERSION}}/SDL2-devel-${{ env.SDL2_VERSION }}-mingw.zip" -o SDL2.zip
         Expand-Archive SDL2.zip
         . C:\msys64\usr\bin\wget.exe "https://github.com/libsdl-org/SDL_image/releases/download/release-${{ env.SDL2_IMAGE_VERSION }}/SDL2_image-devel-${{ env.SDL2_IMAGE_VERSION }}-mingw.zip" -o SDL2_image.zip
         Expand-Archive SDL2_image.zip
