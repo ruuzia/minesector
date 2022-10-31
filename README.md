@@ -8,7 +8,15 @@ This uses only [SDL2](https://www.libsdl.org/) and extension libraries [SDL_imag
 
 Built on Unix with Clang or GCC and Windows with MinGW. 
 
-## Unix Installation
+## Quickstart
+Install the appropriate auto-built binary from [latest release](https://github.com/grassdne/minesector/releases/latest).
+
+For Windows: Run the .msi installer. You may need to get past Windows Defender. \
+For MacOS: Use the .dmg package and do that weird Drag and Drop into Applications thing you do. \
+For RPM/DEB distros: Install the appropriate .rpm or .deb with your package manager (It should install dependencies). \
+Other Unix: Build from source. See below.
+
+## Unix Build from Source Code
 1. Install SDL2 (minimum version 2.0.18), SDL_image, SDL_ttf, and SDL_mixer development packages, (and CMake).
 
   MacOS [Homebrew](https://brew.sh/):
@@ -30,15 +38,33 @@ $ git clone https://github.com/grassdne/minesector.git
 $ cd minesector
 $ ./configure
 $ make -j
-$ sudo make install
-$ minesector
 ```
 ./configure is currently equivalent to running `cmake -DCMAKE_BUILD_TYPE=Release`. To specify an installation location, set -DCMAKE_INSTALL_PREFIX in the configure step:
 ```console
 $ ./configure -DCMAKE_INSTALL_PREFIX=./build
 ```
-To run the program without `make install`, you must set the MINERUNTIME environment variable to the source directory so it knows where to find assets. Inside the git repo:
+The `-j` argument to `make` just tells make to run in parallel and is not required.
+
+3. Install
+
+MacOS
+
+On MacOS, CMake builds a .app package. Run it with:
+```console
+$ open MineSector.app
+```
+Alternatively, run cpack to build a .dmg to Drag and Drop into your Applications.
+```console
+$ cpack
+$ open minesector.dmg 
+```
+
+Linux / other Unix
+
+```console
+$ sudo make install
+```
+To run the program without `make install`, you must set the MINERUNTIME environment variable to the source directory to tell MineSector where to find the assets. Inside the git repo:
 ```console
 $ MINERUNTIME="" ./minesector
 ```
-The `-j` argument to `make` just tells make to run in parallel and is not required.
