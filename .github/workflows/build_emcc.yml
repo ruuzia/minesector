@@ -41,6 +41,4 @@ jobs:
 
     - name: Push changes
       run: |
-        git config pull.rebase false
-        git pull
         git push --force
