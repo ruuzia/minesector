@@ -16,7 +16,7 @@ jobs:
     - name: Overwrite with master
       run: |
         git fetch origin
-        git reset --hard master
+        git reset --hard origin/master
     
     - name: Setup emsdk
       uses: mymindstorm/setup-emsdk@v11
