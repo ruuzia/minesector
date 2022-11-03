@@ -108,11 +108,7 @@ static int event_filter(void *game, SDL_Event *e) {
             printf("Window resize!\n");
         }
     }
-    // Don't consume some keybinds
-    if ((e->type == SDL_KEYDOWN
-            && e->key.keysym.sym == SDLK_r
-            && (e->key.keysym.mod & KMOD_CTRL))
-        ) return 0;
+
     // Put on SDL_PollEvent queue
     return 1;
 }
@@ -230,7 +226,6 @@ int main(void) {
         return 1;
     }
 
-
     try {
         Game _game(Sim.window);
         game = &_game;
@@ -238,6 +233,7 @@ int main(void) {
         _game.OnStart();
 
         SDL_SetEventFilter(event_filter, &_game);
+        SDL_EventState(SDL_MOUSEWHEEL, SDL_IGNORE);
 
 #ifdef __EMSCRIPTEN__
         emscripten_set_main_loop(mainloop, 0, 1);
