@@ -1,8 +1,8 @@
 [Desktop Entry]
-Version=1.0
-Name=Minesweeper
-Exec=sdlminesweeper
-Icon=sdlminesweeper
+Version=1.1
+Name=Minesector
+Exec=minesector
+Icon=minesector
 Terminal=false
 Type=Application
 Categories=Game;Application;
