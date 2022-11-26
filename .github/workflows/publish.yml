@@ -106,7 +106,7 @@ jobs:
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file: minesector.dmg
-        asset_name: minesector-macos.dmg
+        asset_name: minesector-macos-x86_64.dmg
         overwrite: true
         tag: ${{ env.TAG }} 
 
