@@ -7,8 +7,7 @@ on:
       - '*'
 
 env:
-  TAG: 1.1.2
-  #TAG: ${{ github.ref }}
+  TAG: ${{ github.ref_name }}
 
   # WINDOWS only
   SDL2_VERSION: 2.24.1
@@ -71,14 +70,14 @@ jobs:
 
     - name: Build AppImage with LinuxDeploy
       run: |
-        export VERSION="0"
+        export VERSION=${{ env.TAG }}
         ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage --icon-file AppDir/usr/share/pixmaps/minesector.png --desktop-file AppDir/usr/share/applications/minesector.desktop
 
     - name: Upload AppImage
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: MineSector-0-x86_64.AppImage
+        file: MineSector-${{ env.TAG }}-x86_64.AppImage
         asset_name: MineSector-x86_64.AppImage
         overwrite: true
         tag: ${{ env.TAG }}
