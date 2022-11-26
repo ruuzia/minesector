@@ -1,6 +1,6 @@
 [Desktop Entry]
 Version=1.1
-Name=Minesector
+Name=MineSector
 Exec=minesector
 Icon=minesector
 Terminal=false
