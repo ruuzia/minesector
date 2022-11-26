@@ -99,7 +99,7 @@ if (NOT APPLE)
     if (UNIX)
         # Linux app icon
         install(FILES ${PROJECT_NAME}.desktop DESTINATION share/applications/)
-        install(FILES icons/appicon.png RENAME ${PROJECT_NAME}.png DESTINATION share/pixmaps/foo)
+        install(FILES icons/appicon.png RENAME ${PROJECT_NAME}.png DESTINATION share/pixmaps/)
     endif()
 endif()
 
