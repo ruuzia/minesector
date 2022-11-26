@@ -78,8 +78,8 @@ jobs:
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: Minesector-0-x86_64.AppImage
-        asset_name: Minesector-x86_64.AppImage
+        file: MineSector-0-x86_64.AppImage
+        asset_name: MineSector-x86_64.AppImage
         overwrite: true
         tag: ${{ env.TAG }}
 
