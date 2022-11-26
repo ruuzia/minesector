@@ -4,7 +4,6 @@
 main
 main.exe
 src/main
-sdlminesweeper
 CMakeFiles/*
 build/*
 CMakeCache.txt
@@ -17,3 +16,7 @@ cmake-build-*
 .idea/*
 *.bin
 install_manifest.txt
+CPackConfig.cmake
+CPackSourceConfig
+CPackSourceConfig.cmake
+minesector
