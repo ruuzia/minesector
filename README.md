@@ -12,24 +12,24 @@ Built on Unix with Clang or GCC and Windows with MinGW.
 Install the appropriate auto-built binary from [latest release](https://github.com/grassdne/minesector/releases/latest).
 
 For Windows: Run the .msi installer. You may need to get past Windows Defender. \
-For MacOS: Use the .dmg package and do that weird Drag and Drop into Applications thing you do. \
+For MacOS: Use the .dmg package and do that weird Drag and Drop into Applications thing you do. The first time you go to open it right click -> Open -> Open. \
 For RPM/DEB distros: Install the appropriate .rpm or .deb with your package manager (It should install dependencies). \
 Other Unix: Build from source. See below.
 
 ## Unix Build from Source Code
 1. Install SDL2 (minimum version 2.0.18), SDL_image, SDL_ttf, and SDL_mixer development packages (and basic build tools).
 
-  MacOS [Homebrew](https://brew.sh/):
+  ### Fedora:
+  ```console
+  sudo dnf install SDL2-devel SDL2_image-devel SDL2_ttf-devel SDL2_mixer-devel cmake
+  ```
+  ### MacOS [Homebrew](https://brew.sh/):
   ```console
   brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer cmake
   ```
-  Ubuntu 22.04:
+  ### Ubuntu 22.04:
   ```console
   sudo apt install libsdl2-dev libsdl2-ttf-dev libsdl2-mixer-dev libsdl2-image-dev cmake
-  ```
-  Fedora:
-  ```console
-  sudo dnf install SDL2-devel SDL2_image-devel SDL2_ttf-devel SDL2_mixer-devel cmake
   ```
   
 2. Build source code
@@ -48,7 +48,7 @@ The `-j` argument to `make` just tells make to run in parallel and is not requir
 
 3. Install
 
-MacOS
+### MacOS
 
 On MacOS, CMake builds a .app package. Run it with:
 ```console
@@ -60,7 +60,7 @@ cpack
 open minesector.dmg 
 ```
 
-Linux / other Unix
+### Linux / other Unix
 
 ```console
 sudo make install
@@ -69,3 +69,6 @@ To run the program without `make install`, you must set the MINERUNTIME environm
 ```console
 MINERUNTIME="" ./minesector
 ```
+
+## Windows Build from Source Code
+It's 2023+. Install a modern operating system. You deserve it.
