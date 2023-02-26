@@ -23,7 +23,6 @@ public:
 
 class AnimState {
 public:
-    bool foo = false;
     AnimState();
 
     void update(double dt);
