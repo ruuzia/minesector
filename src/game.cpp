@@ -5,6 +5,7 @@
 #include "color.h"
 #include <assert.h>
 #include <cstring>
+#include "frontend.h"
 
 namespace Detonation {
     namespace Particle {
@@ -95,56 +96,8 @@ static void playSoundEffect(int effect) {
     }
 }
 
-namespace Save {
-    char HEADER[] = "MINE ";
-    const char *FILE = "data.bin";
-}
-
-extern "C" {
-    extern bool openSaveReader(void);
-    extern Uint8 readByte(void);
-    extern bool openSaveWriter(void);
-    extern int writeByte(Uint8 value);
-    extern void closeSaveFile(void);
-
-#ifndef __EMSCRIPTEN__
-    static SDL_RWops *rw;
-    static std::string* getSaveFile(void) {
-        char* dir = SDL_GetPrefPath("grassdne", "minesector");
-        if (dir == NULL) return NULL;
-        std::string *file = new std::string(std::string(dir)+Save::FILE);
-        SDL_free(dir);
-        return file;
-     }
-     bool openSaveReader(void) {
-        std::string *file = getSaveFile();
-         if (file == NULL) return false;
-         rw = SDL_RWFromFile(file->c_str(), "r+b");
-         printf("%s\n", file->c_str());
-         fflush(stdout);
-         free(file);
-         return rw != NULL;
-     }
-     bool openSaveWriter(void) {
-         std::string *file = getSaveFile();
-         if (file == NULL) return false;
-         rw = SDL_RWFromFile(file->c_str(), "w+b");
-         free(file);
-         return rw != NULL;
-     }
-    Uint8 readByte(void) {
-        return SDL_ReadU8(rw);
-    }
-    int writeByte(Uint8 value) {
-        return SDL_WriteU8(rw, value);
-    }
-    void closeSaveFile(void) {
-        SDL_RWclose(rw);
-        rw = NULL;
-    }
-#endif
-}
-
+const char Save::HEADER[] = "MINE ";
+const char *Save::FILE = "data.bin";
 
 struct Quad { int l, r, t, b; };
 
@@ -533,7 +486,7 @@ void Game::load() {
         printf("no save file found\n");
         return;
     }
-    for (char *c = Save::HEADER; *c != '\0'; ++c) {
+    for (const char *c = Save::HEADER; *c != '\0'; ++c) {
         Uint8 u8 = readByte();
         if (u8 != *c) {
             printf("Invalid or corrupted save file! Missing header.\n");

@@ -101,4 +101,9 @@ private:
     int activeBtn;
 };
 
+namespace Save {
+    extern const char HEADER[];
+    extern const char *FILE;
+}
+
 #endif
