@@ -99,7 +99,6 @@ private:
     std::vector<Uint8> tileDatas;
 
     Tile *currentHover;
-    int activeBtn;
 };
 
 namespace Save {

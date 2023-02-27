@@ -411,7 +411,6 @@ Game::Game(SDL_Window *window)
     , restartBtn(mainFont.raw(), "Restart!", 0xFF1000)
     , playAgainBtn(mainFont.raw(), "Play again?", 0x00C000)
     , currentHover(nullptr)
-    , activeBtn(-1)
 {
     loadMedia();
 }
@@ -695,22 +694,6 @@ void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
     }
     else {
         updateCurrentHover(e.x, e.y);
-    }
-
-    if (activeBtn != -1 && !buttons[activeBtn]->isMouseOver(e.x, e.y)) {
-        // Active button is no longer under mouse
-        buttons[activeBtn]->mouseLeave();
-        activeBtn = -1;
-    }
-
-    if (!currentHover && activeBtn <  0) {
-        for (int i = 0; i < (int)buttons.size(); ++i) {
-            if (!buttons[i]->hidden && buttons[i]->isMouseOver(e.x, e.y)) {
-                buttons[i]->mouseEnter();
-                activeBtn = i;
-                break;
-            }
-        }
     }
 }
 
