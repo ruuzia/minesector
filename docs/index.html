@@ -78,12 +78,6 @@ p, h1 {
         canvas: canvas,
       };
 
-      // https://developer.chrome.com/blog/autoplay/#webaudio
-      // https://github.com/emscripten-core/emscripten/issues/6511#issuecomment-483039500
-      canvas.onclick = () => {
-        if (Module.SDL2.audioContext.state == 'suspended') { Module.SDL2.audioContext.resume(); }
-      };
-
       canvas.onmousedown = (e) => {
         const bounds = canvas.getBoundingClientRect();
         if (e.button == 0) {
@@ -91,6 +85,11 @@ p, h1 {
         } else if (e.button == 2) {
           _onAltClick(e.x - bounds.left, e.y - bounds.top)
         }
+      };
+
+      window.onkeydown = (e) => {
+        console.log("onkeydown");
+        e.stopImmediatePropagation();
       };
 
       let timeout;
