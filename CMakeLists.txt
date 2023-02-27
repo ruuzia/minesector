@@ -40,7 +40,7 @@ set(SOURCES
     src/color.cpp
     src/font.cpp
     src/tile.cpp
-    src/sdl_frontend.cpp
+    src/native_frontend.cpp
 )
 
 set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.rc")
