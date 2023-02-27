@@ -16,6 +16,11 @@ body {
     display: block;
     margin-left: auto;
     margin-right: auto;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 #container {
@@ -68,16 +73,67 @@ p, h1 {
     </div>
 
     <script type='text/javascript'>
-        var Module = {
-                    canvas: document.getElementById('canvas'),
-                };
-        
-        // https://developer.chrome.com/blog/autoplay/#webaudio
-        // https://github.com/emscripten-core/emscripten/issues/6511#issuecomment-483039500
-        canvas.onclick = () => {
-    	  if (Module.SDL2.audioContext.state == 'suspended') { Module.SDL2.audioContext.resume(); }
-        };
-        Module.onRuntimeInitialized = () => addEventListener("visibilitychange", _save);
+      const canvas = document.getElementById('canvas');
+      var Module = {
+        canvas: canvas,
+      };
+
+      // https://developer.chrome.com/blog/autoplay/#webaudio
+      // https://github.com/emscripten-core/emscripten/issues/6511#issuecomment-483039500
+      canvas.onclick = () => {
+        if (Module.SDL2.audioContext.state == 'suspended') { Module.SDL2.audioContext.resume(); }
+      };
+
+      canvas.onmousedown = (e) => {
+        const bounds = canvas.getBoundingClientRect();
+        if (e.button == 0) {
+          _onClick(e.x - bounds.left, e.y - bounds.top)
+        } else if (e.button == 2) {
+          _onAltClick(e.x - bounds.left, e.y - bounds.top)
+        }
+      };
+
+      let timeout;
+      let touchStart;
+      const TOUCH_HOLD_TIME = 200;
+
+      canvas.ontouchstart = (e) => {
+        e.stopImmediatePropagation(); // Don't call Emscripten SDL2 port
+        touchStart = e.timeStamp;
+        if (e.touches.length != 1) {
+          clearTimeout(timeout);
+          return;
+        }
+
+        timeout = setTimeout(() => {
+          // Long press
+          const bounds = canvas.getBoundingClientRect();
+          _onAltClick(e.touches[0].clientX - bounds.left, e.touches[0].clientY - bounds.top)
+        }, TOUCH_HOLD_TIME);
+      };
+
+      canvas.ontouchend = (e) => {
+        clearTimeout(timeout);
+        if (e.changedTouches.length != 1) {
+          return;
+        }
+        if (e.timeStamp - touchStart < TOUCH_HOLD_TIME) {
+          // Short tap
+          const bounds = canvas.getBoundingClientRect();
+          _onClick(e.changedTouches[0].clientX - bounds.left, e.changedTouches[0].clientY - bounds.top);
+        }
+      };
+
+      canvas.ontouchmove = (e) => {
+        clearTimeout(timeout);
+        //e.stopImmediatePropagation(); // Don't pass to Emscripten SDL2 port callback
+      };
+
+      canvas.ontouchcancel = () => {
+        clearTimeout(timeout);
+      };
+
+      Module.onRuntimeInitialized = () => addEventListener("visibilitychange", _save);
     </script>
 
     <div style="height: 10em"></div>

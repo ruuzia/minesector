@@ -4635,7 +4635,7 @@ var ASM_CONSTS = {
             canvas.addEventListener("click", (ev) => {
               if (!Browser.pointerLock && Module['canvas'].requestPointerLock) {
                 Module['canvas'].requestPointerLock();
-                ev.preventDefault();
+                //ev.preventDefault();
               }
             }, false);
           }

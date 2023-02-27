@@ -20,7 +20,7 @@
 constexpr int SCREEN_WIDTH  = 640 * 1.2;
 constexpr int SCREEN_HEIGHT = 480 * 1.2;
 
-constexpr Uint32 TOUCH_HOLD_TICKS = 200;
+#define TOUCH_HOLD_TICKS 200
 
 SDL_Renderer *renderer;
 
@@ -120,9 +120,19 @@ extern "C" {
     void save(void) {
         game->save();
     }
+
+    void onClick(int x, int y) {
+        game->onClick(x, y);
+    }
+
+    void onAltClick(int x, int y) {
+        game->onAltClick(x, y);
+    }
 }
 
+#ifndef __EMSCRIPTEN__
 static Uint32 touchFingerDown;
+#endif
 
 static void mainloop() {
     Uint32 current = SDL_GetTicks();
@@ -175,15 +185,16 @@ static void mainloop() {
             }
             break;
         
+#ifndef __EMSCRIPTEN__
         case SDL_MOUSEBUTTONDOWN:
             if (e.button.which == SDL_TOUCH_MOUSEID) {
                 touchFingerDown = current;
             }
             else if (e.button.button == SDL_BUTTON_LEFT) {
-                game->onClick(e.button.x, e.button.y);
+                onClick(e.button.x, e.button.y);
             }
             else if (e.button.button == SDL_BUTTON_RIGHT) {
-                game->onAltClick(e.button.x, e.button.y);
+                onAltClick(e.button.x, e.button.y);
             }
             break;
 
@@ -191,11 +202,12 @@ static void mainloop() {
             if (e.button.which == SDL_TOUCH_MOUSEID) {
                 if (touchFingerDown) {
                     // Normal click
-                    game->onClick(e.button.x, e.button.y);
+                    onClick(e.button.x, e.button.y);
                     touchFingerDown = 0;
                 }
             }
             break;
+#endif
 
         case SDL_MOUSEMOTION:
             game->onMouseMove(e.motion);
@@ -203,13 +215,15 @@ static void mainloop() {
         }
     }
 
+#ifndef __EMSCRIPTEN__
     if (touchFingerDown && current >= touchFingerDown + TOUCH_HOLD_TICKS) {
         // We've touched for TOUCH_HOLD_TICKS time, now simulate right click
         int x,y;
         SDL_GetMouseState(&x, &y);
-        game->onAltClick(x, y);
+        onAltClick(x, y);
         touchFingerDown = 0;
     }
+#endif
 
     game->OnUpdate(dt);
     SDL_RenderPresent(renderer);

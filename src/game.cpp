@@ -536,8 +536,34 @@ void Game::restartGame() {
     ready();
 }
 
+static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
+    for (int r = 0; r < self.rows; ++r) {
+        for (int c = 0; c < self.cols; ++c) {
+            if (self.board[r][c].isMouseOver(mouseX, mouseY)) {
+                return &self.board[r][c];
+            }
+        }
+    }
+    return nullptr;
+}
+
+void Game::updateCurrentHover(int mouseX, int mouseY) {
+    if (state & GameState::OVER) {
+        if (currentHover) currentHover = nullptr;
+        return;
+    }
+    if (currentHover == nullptr || !currentHover->isMouseOver(mouseX, mouseY)) {
+        if (currentHover) currentHover->mouseLeave();
+        
+        Tile *tile = getTileUnderMouse(*this, mouseX, mouseY);
+        if (tile) tile->mouseEnter();
+        currentHover = tile;
+    }
+}
+
 void Game::onClick(int x, int y) {
-    if (currentHover) {
+    updateCurrentHover(x, y);
+    if (!(state & GameState::OVER) && currentHover) {
         // Tile is hovered over
         if (currentHover->isHidden() && currentHover->isUnflagged()) {
             if (state & GameState::STARTED) {
@@ -549,8 +575,7 @@ void Game::onClick(int x, int y) {
                 state |= GameState::STARTED;
             }
         }
-    }
-    else {
+    } else {
         for (auto btn : buttons) {
             if (btn->onclick && btn->isMouseOver(x, y)) {
                 btn->onclick();
@@ -561,7 +586,10 @@ void Game::onClick(int x, int y) {
 }
 
 void Game::onAltClick(int x, int y) {
-    (void)x; (void)y;
+    if (state & GameState::OVER) return;
+
+    updateCurrentHover(x, y);
+
     if (currentHover && currentHover->isHidden()) {
         // Flag tile
         if (currentHover->isUnflagged()) {
@@ -658,29 +686,14 @@ void Game::onRevealTile(Tile& revealed) {
     }
 }
 
-static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
-    for (int r = 0; r < self.rows; ++r) {
-        for (int c = 0; c < self.cols; ++c) {
-            if (self.board[r][c].isMouseOver(mouseX, mouseY)) {
-                return &self.board[r][c];
-            }
-        }
-    }
-    return nullptr;
-}
-
 void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
     if (state & GameState::OVER) {
         // Can't select tiles when game is over
         if (currentHover) currentHover->mouseLeave();
         currentHover = nullptr;
     }
-    else if (currentHover == nullptr || !currentHover->isMouseOver(e.x, e.y)) {
-        if (currentHover) currentHover->mouseLeave();
-        
-        Tile *tile = getTileUnderMouse(*this, e.x, e.y);
-        if (tile) tile->mouseEnter();
-        currentHover = tile;
+    else {
+        updateCurrentHover(e.x, e.y);
     }
 
     if (activeBtn != -1 && !buttons[activeBtn]->isMouseOver(e.x, e.y)) {
