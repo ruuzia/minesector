@@ -23,8 +23,18 @@ Anim& AnimState::play(int code, Anim* anim_, Uint32 delay) {
 }
 
 bool AnimState::isAnimActive(int code) {
-    if (!anim) return false;
-    return code == active;
+    return isAnimActive() && code == active;
+}
+bool AnimState::isAnimActive(void) {
+    return anim != nullptr;
+}
+
+bool AnimState::isAnimPending(int code) {
+    return isAnimActive(code) && !started;
+}
+
+bool AnimState::isAnimPending(void) {
+    return isAnimActive() && !started;
 }
 
 void AnimState::kill() {

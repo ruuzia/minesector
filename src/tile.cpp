@@ -228,30 +228,6 @@ void Tile::load(Uint8 data) {
     removed =    data & REMOVED;
 }
 
-// No animations
-void Tile::forceUpdateTexture() {
-    if (removed) {
-        background = nullptr;
-        overlay = nullptr;
-    }
-    else if (isHidden()) {
-        background = &backgrounds[TileBG::HIDDEN];
-        if (isFlagged()) {
-            overlay = &overlays[TileOverlay::FLAG];
-        }
-    }
-    else {
-        background = &backgrounds[isRed ? TileBG::RED_SQUARE : TileBG::BLANK_SQUARE];
-        if (isMine()) {
-            overlay = &overlays[TileOverlay::MINE];
-        }
-        else {
-            overlay = &numbers[countTouchingMines()];
-        }
-    }
-    animState.kill();
-}
-
 int Tile::countTouchingMines() const {
     int nearbyMines = 0;
     foreach_touching_tile([&](Tile& tile) -> void {
@@ -267,12 +243,7 @@ int Tile::countTouchingMines() const {
 void Tile::playFlagAnim() {
     if (animState.isAnimActive(TileAnim::FLAG_ANIM)) return;
 
-    overlay = nullptr;
-    background = &backgrounds[TileBG::HIDDEN];
     auto flagAnim = new FlagAnim(&overlays[TileOverlay::FLAG], {x, y}, flagged);
-    flagAnim->onfinish = [this] () {
-        if (flagged) overlay = &overlays[TileOverlay::FLAG];
-    };
     animState.play(TileAnim::FLAG_ANIM, flagAnim);
 }
 
@@ -289,18 +260,9 @@ void Tile::unflag() {
 }
 
 void Tile::mouseEnter() {
-    if (isHidden() && isUnflagged()) {
-        background = &backgrounds[TileBG::HIGHLIGHT];
-    }
-    else if (animState.isAnimActive(TileAnim::UNCOVER) && !animState.started) {
+    if (animState.isAnimActive(TileAnim::UNCOVER) && !animState.started) {
         // remove delay on uncover animation when user hovers over
         animState.startTime = SDL_GetTicks();
-    }
-}
-
-void Tile::mouseLeave() {
-    if (background == &backgrounds[TileBG::HIGHLIGHT]) {
-        background = &backgrounds[TileBG::HIDDEN];
     }
 }
 
@@ -309,21 +271,16 @@ void Tile::reset() {
     setMine(false);
     setFlagged(false);
     setHidden(true);
-    background = &backgrounds[TileBG::HIDDEN];
-    overlay = nullptr;
     isRed = false;
     removed = false;
 }
 
 void Tile::red() {
     isRed = true;
-    background = &backgrounds[TileBG::RED_SQUARE];
 }
 
 void Tile::dissapear() {
     animState.play(-1, new WinTileAnim({x, y}, SIZE));
-    background = nullptr;
-    overlay = nullptr;
     removed = true;
 }
 
@@ -332,12 +289,7 @@ int Tile::SIZE = 32;
 void Tile::flip(bool recurse, Uint32 delay) {
     setHidden(false);
     if (isMine()) {
-        overlay = nullptr;
         auto anim = new MineRevealAnim({x,y}, SIZE);
-        anim->onstart = [this](){
-            overlay = &overlays[TileOverlay::MINE];
-            background = &backgrounds[TileBG::BLANK_SQUARE];
-        };
         animState.play(TileAnim::REVEALMINE, anim, delay);
     }
     else {
@@ -358,11 +310,6 @@ void Tile::flip(bool recurse, Uint32 delay) {
 
 void Tile::playUncoverAnim(Uint32 delay) {
     auto uncoverAnim = new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng);
-    // Use onstart to set textures to account for `delay` parameter
-    uncoverAnim->onstart = [this]() {
-        overlay = &numbers[countTouchingMines()];
-        background = &backgrounds[TileBG::BLANK_SQUARE];
-    };
 
     animState.play(TileAnim::UNCOVER, uncoverAnim, delay);
 
@@ -396,12 +343,32 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
     }
 }
 
-void Tile::render() {
-    if (background)
-        background->render(x, y);
+Texture *Tile::getBackground(bool isSelected) {
+    using namespace TileBG;
+    if (removed) return nullptr;
+    if (isHidden() and isUnflagged() and isSelected) return &backgrounds[HIGHLIGHT];
+    if (isHidden() || animState.isAnimPending()) return &backgrounds[HIDDEN];
+    if (isRed) return &backgrounds[RED_SQUARE];
+    return &backgrounds[BLANK_SQUARE];
+}
 
-    if (overlay != nullptr) {
-        overlay->render(x + (SIZE - overlay->getWidth()) / 2, y + (SIZE - overlay->getHeight()) / 2);
+Texture *Tile::getOverlay(void) {
+    using namespace TileOverlay;
+    if (removed) return nullptr;
+    if (isHidden() && isFlagged() &&
+        !animState.isAnimActive(TileAnim::FLAG_ANIM)) return &overlays[FLAG];
+    if (isRevealed() && isSafe() && !animState.isAnimPending(TileAnim::UNCOVER)) return &numbers[countTouchingMines()];
+    if (isRevealed() && isMine() && !animState.isAnimPending(TileAnim::REVEALMINE)) return &overlays[MINE];
+    return nullptr;
+}
+
+void Tile::render(bool isSelected) {
+    Texture *bg = getBackground(isSelected);
+    Texture *fg = getOverlay();
+
+    if (bg) bg->render(x, y);
+    if (fg) {
+        fg->render(x + (SIZE - fg->getWidth()) / 2, y + (SIZE - fg->getHeight()) / 2);
     }
 }
 

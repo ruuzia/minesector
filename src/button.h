@@ -23,7 +23,8 @@ public:
 
     std::function<void()> onclick;
 
-    virtual void render()  {
+    virtual void render(bool isSelected)  {
+        (void)isSelected;
         background->render(x, y);
     }
 
@@ -43,14 +44,11 @@ public:
     TextButton(TTF_Font * font = nullptr, std::string string = "", Color color = {0.f, 0.f, 0.f});
     ~TextButton();
 
-    void render() override;
+    void render(bool isSelected) override;
     void load();
 
     int getWidth() const override;
     int getHeight() const override;
-
-    void mouseEnter() override;
-    void mouseLeave() override;
 
     void setY(int y_) {
         y = y_;
@@ -90,7 +88,6 @@ private:
     double scale;
     Color bgcolor;
     Color hoverbg;
-    bool active;
 };
 
 #endif

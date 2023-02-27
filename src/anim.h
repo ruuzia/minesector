@@ -33,6 +33,9 @@ public:
     }
 
     bool isAnimActive(int code);
+    bool isAnimActive(void);
+    bool isAnimPending(int code);
+    bool isAnimPending(void);
 
     std::unique_ptr<Anim> anim;
 

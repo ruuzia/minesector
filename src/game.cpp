@@ -1,4 +1,5 @@
 #include "game.h"
+#include <SDL_mouse.h>
 #include <string>
 #include <algorithm>
 #include "app.h"
@@ -372,15 +373,18 @@ void Game::updateFlagCount() {
 }
 
 void Game::OnUpdate(double dt) {
+    int x, y; SDL_GetMouseState(&x, &y);
+
     for (auto& row : board) for (Tile& tile : row) {
-        tile.OnUpdate(dt);
+        tile.render(tile.isMouseOver(x, y));
+        tile.animState.update(dt);
     }
 
     animState.update(dt);
 
     for (auto btn : buttons) {
         if (!btn->hidden) {
-            btn->render();
+            btn->render(btn->isMouseOver(x, y));
         }
     }
 
@@ -421,9 +425,6 @@ void Game::OnStart() {
     if (!tileDatas.empty()) {
         for (int r = 0; r < rows; ++r) for (int c = 0; c < cols; ++c) {
             board[r][c].load(tileDatas[r*cols+c]);
-        }
-        for (auto &row : board) for (auto& tile : row) {
-            tile.forceUpdateTexture();
         }
         updateFlagCount();
     }

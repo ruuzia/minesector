@@ -54,9 +54,7 @@ public:
     int getWidth() const override { return SIZE; }
     int getHeight() const override { return SIZE; }
 
-    Texture *overlay;
-
-    void render() override;
+    void render(bool isSelected) override;
 
     Tile(Texture *tex = nullptr);
 
@@ -86,13 +84,7 @@ public:
     void reset();
     void red();
     void mouseEnter() override;
-    void mouseLeave() override;
     void dissapear();
-
-    void OnUpdate(double dt) {
-        render();
-        animState.update(dt);
-    }
 
     bool isRed;
     bool removed;
@@ -102,7 +94,6 @@ public:
     void foreach_touching_tile(std::function<void(Tile&)> callback, bool diagonals = true) const;
     int countTouchingMines() const;
 
-    void forceUpdateTexture();
     Uint8 save();
     void load(Uint8 data);
 
@@ -120,6 +111,8 @@ private:
 
     void playFlagAnim();
     void playUncoverAnim(Uint32 delay);
+    Texture *getBackground(bool isSelected);
+    Texture *getOverlay(void);
 
 };
 

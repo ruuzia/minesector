@@ -34,7 +34,6 @@ TextButton::TextButton(TTF_Font *font, std::string string, Color color)
 {
     scale = 1.0;
     borderWidth = 15;
-    active = false;
     hidden = false;
 }
 
@@ -54,11 +53,11 @@ void TextButton::load() {
     text.load();
 }
 
-void TextButton::render() {
+void TextButton::render(bool isActive) {
     if (!text.loaded) {
         load();
     }
-    (active ? hoverbg : bgcolor).draw();
+    (isActive ? hoverbg : bgcolor).draw();
     SDL_Rect fillRect = {
         x, y,
         text.getWidth() + 2 * borderWidth,
@@ -66,12 +65,5 @@ void TextButton::render() {
     };
     SDL_RenderFillRect(renderer, &fillRect);
     text.render();
-}
-
-void TextButton::mouseEnter() {
-    active = true;
-}
-void TextButton::mouseLeave() {
-    active = false;
 }
 
