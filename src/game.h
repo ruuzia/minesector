@@ -92,13 +92,10 @@ private:
     void generateStartingArea(Tile& tile);
     void generateMines();
     void flipTiles(Tile& root, int count, std::vector<Tile*>& toreveal);
-    void updateCurrentHover(int mouseX, int mouseY);
 
     void onRevealTile(Tile& tile);
 
     std::vector<Uint8> tileDatas;
-
-    Tile *currentHover;
 };
 
 namespace Save {

@@ -410,7 +410,6 @@ Game::Game(SDL_Window *window)
     , flagCounter(mainFont.raw(), "0/? flags", 0xA00000)
     , restartBtn(mainFont.raw(), "Restart!", 0xFF1000)
     , playAgainBtn(mainFont.raw(), "Play again?", 0x00C000)
-    , currentHover(nullptr)
 {
     loadMedia();
 }
@@ -547,22 +546,8 @@ static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
     return nullptr;
 }
 
-void Game::updateCurrentHover(int mouseX, int mouseY) {
-    if (state & GameState::OVER) {
-        if (currentHover) currentHover = nullptr;
-        return;
-    }
-    if (currentHover == nullptr || !currentHover->isMouseOver(mouseX, mouseY)) {
-        if (currentHover) currentHover->mouseLeave();
-        
-        Tile *tile = getTileUnderMouse(*this, mouseX, mouseY);
-        if (tile) tile->mouseEnter();
-        currentHover = tile;
-    }
-}
-
 void Game::onClick(int x, int y) {
-    updateCurrentHover(x, y);
+    Tile *currentHover = getTileUnderMouse(*this, x, y);
     if (!(state & GameState::OVER) && currentHover) {
         // Tile is hovered over
         if (currentHover->isHidden() && currentHover->isUnflagged()) {
@@ -588,7 +573,7 @@ void Game::onClick(int x, int y) {
 void Game::onAltClick(int x, int y) {
     if (state & GameState::OVER) return;
 
-    updateCurrentHover(x, y);
+    Tile *currentHover = getTileUnderMouse(*this, x, y);
 
     if (currentHover && currentHover->isHidden()) {
         // Flag tile
@@ -687,14 +672,7 @@ void Game::onRevealTile(Tile& revealed) {
 }
 
 void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
-    if (state & GameState::OVER) {
-        // Can't select tiles when game is over
-        if (currentHover) currentHover->mouseLeave();
-        currentHover = nullptr;
-    }
-    else {
-        updateCurrentHover(e.x, e.y);
-    }
+    (void)e;
 }
 
 static void pushHiddenNeighbors(Tile& tile, std::vector<Tile*>& tiles, bool diagonals) {
