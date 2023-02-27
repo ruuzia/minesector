@@ -780,6 +780,7 @@ void Game::generateMines() {
 }
 
 void Game::loadMedia() {
+    // TODO: immediate-mode style UI
     updateFlagCount();
 
     Tile::loadMedia(mainFont.raw());
