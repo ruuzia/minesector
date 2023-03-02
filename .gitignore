@@ -20,3 +20,4 @@ CPackConfig.cmake
 CPackSourceConfig
 CPackSourceConfig.cmake
 minesector
+.cache/
