@@ -6,6 +6,7 @@
 #include "tile.h"
 
 #include <vector>
+#include <array>
 #include <functional>
 #include <random>
 #include <memory>
@@ -32,6 +33,8 @@ namespace SoundEffects {
 
 #define COUNT_TILE_NUMBERS 8
 
+#define MAX_FIELD_SIZE 50
+
 class Game {
 public:
     Game(SDL_Window *window);
@@ -54,7 +57,8 @@ public:
 
     int rows, cols;
 
-    std::vector<std::vector<Tile> > board;
+    // std::array? why should I care?
+    Tile board[MAX_FIELD_SIZE][MAX_FIELD_SIZE];
 
     std::mt19937 rng;
 

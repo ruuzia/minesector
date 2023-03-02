@@ -359,8 +359,10 @@ Mix_Chunk* Game::sounds[SoundEffects::COUNT];
 
 void Game::updateFlagCount() {
     int flagCount = 0;
-    for (auto& row : board) for (auto& tile : row) {
-        flagCount += tile.isFlagged();
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            flagCount += board[r][c].isFlagged();
+        }
     }
 
     flagCounter.setString(std::to_string(flagCount)
@@ -375,9 +377,12 @@ void Game::updateFlagCount() {
 void Game::OnUpdate(double dt) {
     int x, y; SDL_GetMouseState(&x, &y);
 
-    for (auto& row : board) for (Tile& tile : row) {
-        tile.render(tile.isMouseOver(x, y));
-        tile.animState.update(dt);
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            auto &tile = board[r][c];
+            tile.render(tile.isMouseOver(x, y));
+            tile.animState.update(dt);
+        }
     }
 
     animState.update(dt);
@@ -402,7 +407,6 @@ Game::~Game() {
 Game::Game(SDL_Window *window)
     : rows(Difficulty::SIZES[1].rows)
     , cols(Difficulty::SIZES[1].cols)
-    , board(rows, std::vector<Tile>(cols))
     , rng(std::random_device{}())
     , mainFont("assets/fonts/Arbutus-Regular.ttf")
     , state(GameState::READY)
@@ -436,8 +440,10 @@ void Game::ready() {
     mineCount = rows * cols * PERCENT_MINES;
     animState.kill();
 
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
+    resizeBoard();
+
+    for (int row = 0; row < MAX_FIELD_SIZE; ++row) {
+        for (int col = 0; col < MAX_FIELD_SIZE; ++col) {
             Tile &tile = board[row][col];
             tile.row = row;
             tile.col = col;
@@ -471,9 +477,11 @@ void Game::save() {
     writeByte('g');
     writeByte((Uint8)state);
 
-    for (auto& row : board) for (auto& tile : row) {
-        writeByte('t');
-        writeByte(tile.save());
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            writeByte('t');
+            writeByte(board[r][c].save());
+        }
     }
 
     writeByte('\0');
@@ -521,12 +529,16 @@ void Game::load() {
 
 void Game::resizeBoard() {
     // Resize 2d vector
-    board.resize(rows);
-    for (auto& row : board) {
-        row.resize(cols);
-    }
 
-    restartGame();
+#if 1
+#else
+    board.resize(MAX_FIELD_SIZE);
+    for (auto& row : board) {
+        row.resize(MAX_FIELD_SIZE);
+    }
+#endif
+    assert(rows < MAX_FIELD_SIZE);
+    assert(cols < MAX_FIELD_SIZE);
 }
 
 void Game::restartGame() {
@@ -605,9 +617,12 @@ void Game::onLost(Tile& mine) {
 
     std::vector<Tile *> mines;
     double delay = 0;
-    for (auto& row : board) for (Tile& tile : row) {
-        if (tile.isMine() && tile.isUnflagged()) {
-            mines.push_back(&tile);
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            auto &tile = board[r][c];
+            if (tile.isMine() && tile.isUnflagged()) {
+                mines.push_back(&tile);
+            }
         }
     }
     std::sort(mines.begin(), mines.end(), [&mine](const Tile *a, const Tile *b) {
@@ -633,10 +648,13 @@ void Game::onLost(Tile& mine) {
 
     // When the last mine is revealed, mark all incorrect flags
     mines.back()->animState.anim->onstart = [this]() {
-        for (auto& row: board) for (Tile& tile : row) {
-            if (tile.isSafe() && tile.isFlagged()) {
-                // Incorrect flag
-                tile.red();
+        for (int y = 0; y < MAX_FIELD_SIZE; y++) {
+            for (int x = 0; x < MAX_FIELD_SIZE; x++) {
+                auto &tile = board[y][x];
+                if (tile.isSafe() && tile.isFlagged()) {
+                    // Incorrect flag
+                    tile.red();
+                }
             }
         }
     };
@@ -645,9 +663,12 @@ void Game::onLost(Tile& mine) {
 void Game::onWon() {
     state |= GameState::WON;
     
-    for (auto& row : board) for (auto& tile : row) {
-        if (tile.isMine()) {
-            tile.dissapear();
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            auto &tile = board[r][c];
+            if (tile.isMine()) {
+                tile.dissapear();
+            }
         }
     }
 }
@@ -658,7 +679,6 @@ void Game::onRevealTile(Tile& revealed) {
         playSoundEffect(SoundEffects::EXPLODE);
     }
     else if (hasWon()) {
-        printf("Game won!\n");
         onWon();
     }
     else {
@@ -781,8 +801,6 @@ void Game::generateMines() {
 
 void Game::loadMedia() {
     // TODO: immediate-mode style UI
-    updateFlagCount();
-
     Tile::loadMedia(mainFont.raw());
 
     restartBtn.setScale(0.5);
@@ -812,6 +830,7 @@ void Game::loadMedia() {
             rows = Difficulty::SIZES[i].rows;
             cols = Difficulty::SIZES[i].cols;
             resizeBoard();
+            restartGame();
         };
     }
 
@@ -887,9 +906,11 @@ void Game::positionItems() {
 }
 
 bool Game::hasWon() {
-    for (auto& row : board) for (auto& tile : row) {
-        if (tile.isHidden() && tile.isSafe()) {
-            return false;
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            if (board[r][c].isHidden() && board[r][c].isSafe()) {
+                return false;
+            }
         }
     }
     // All tiles that aren't mines have been revealed!

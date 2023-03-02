@@ -12,4 +12,5 @@ em++ ../src/anim.cpp ../src/color.cpp ../src/game.cpp ../src/texture.cpp \
     -sSDL2_IMAGE_FORMATS="['png']" -sNO_DISABLE_EXCEPTION_CATCHING \
     --preload-file ../assets@assets \
     -sEXPORTED_FUNCTIONS=_main,_save,_onClick,_onAltClick --js-library mine.js \
+    -sSTACK_SIZE=1000000 \
     "$@"
