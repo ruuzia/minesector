@@ -529,14 +529,6 @@ void Game::load() {
 
 void Game::resizeBoard() {
     // Resize 2d vector
-
-#if 1
-#else
-    board.resize(MAX_FIELD_SIZE);
-    for (auto& row : board) {
-        row.resize(MAX_FIELD_SIZE);
-    }
-#endif
     assert(rows < MAX_FIELD_SIZE);
     assert(cols < MAX_FIELD_SIZE);
 }
