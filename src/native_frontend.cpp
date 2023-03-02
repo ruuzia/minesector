@@ -21,14 +21,14 @@ bool openSaveReader(void) {
     rw = SDL_RWFromFile(file->c_str(), "r+b");
     printf("%s\n", file->c_str());
     fflush(stdout);
-    free(file);
+    delete file;
     return rw != NULL;
 }
 bool openSaveWriter(void) {
     std::string *file = getSaveFile();
     if (file == NULL) return false;
     rw = SDL_RWFromFile(file->c_str(), "w+b");
-    free(file);
+    delete file;
     return rw != NULL;
 }
 Uint8 readByte(void) {
