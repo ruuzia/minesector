@@ -16,8 +16,17 @@ if (APPLE AND CMAKE_BUILD_TYPE MATCHES Release)
     set(STATIC_LINK 1)
 endif()
 
-# FLAGS
+if (${FRONTEND_TEST})
+    add_compile_definitions(FRONTEND_TEST)
+elseif(${FRONTEND_NATIVE})
+    add_compile_definitions(FRONTEND_NATIVE)
+else()
+    # Default
+    add_compile_definitions(FRONTEND_NATIVE)
+endif()
+
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")
+# FLAGS
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wno-attributes")
 if (WIN32)
@@ -40,7 +49,7 @@ set(SOURCES
     src/color.cpp
     src/font.cpp
     src/tile.cpp
-    src/native_frontend.cpp
+    src/frontend.cpp
 )
 
 set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.rc")

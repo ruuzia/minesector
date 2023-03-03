@@ -52,7 +52,7 @@ void App::init() {
     }
     printf("Runtime path: %s\n", runtimeBasePath.c_str()); fflush(stdout);
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
         throw std::runtime_error("SDL could not initialize! SDL Error: " + std::string(SDL_GetError()));
     }
 
@@ -128,10 +128,19 @@ extern "C" {
     void onAltClick(int x, int y) {
         game->onAltClick(x, y);
     }
+
+    void quit(void) {
+        running = false;
+    }
 }
 
-#ifndef __EMSCRIPTEN__
+#ifdef FRONTEND_NATIVE
 static Uint32 touchFingerDown;
+#endif
+
+#ifdef FRONTEND_TEST
+    extern "C" void test_frontend_main(char **argv);
+    extern "C" void test_frontend_mouse_down(SDL_MouseButtonEvent *e);
 #endif
 
 static void mainloop() {
@@ -185,7 +194,7 @@ static void mainloop() {
             }
             break;
         
-#ifndef __EMSCRIPTEN__
+#ifdef FRONTEND_NATIVE
         case SDL_MOUSEBUTTONDOWN:
             if (e.button.which == SDL_TOUCH_MOUSEID) {
                 touchFingerDown = current;
@@ -209,13 +218,19 @@ static void mainloop() {
             break;
 #endif
 
+#ifdef FRONTEND_TEST
+        case SDL_MOUSEBUTTONDOWN:
+            test_frontend_mouse_down(&e.button);
+            break;
+#endif
+
         case SDL_MOUSEMOTION:
             game->onMouseMove(e.motion);
             break;
         }
     }
 
-#ifndef __EMSCRIPTEN__
+#ifdef FRONTEND_NATIVE
     if (touchFingerDown && current >= touchFingerDown + TOUCH_HOLD_TICKS) {
         // We've touched for TOUCH_HOLD_TICKS time, now simulate right click
         int x,y;
@@ -231,7 +246,9 @@ static void mainloop() {
 
 App Sim;
 
-int main(void) {
+
+int main(int argc, char **argv) {
+    (void)argc;
     try {
         Sim.init();
     }
@@ -239,6 +256,12 @@ int main(void) {
         printf("Failed to initialize SDL.\n%s\n", ex.what());
         return 1;
     }
+
+#ifdef FRONTEND_TEST
+    test_frontend_main(&argv[1]);
+#else
+    (void)argv;
+#endif
 
     try {
         Game _game(Sim.window);

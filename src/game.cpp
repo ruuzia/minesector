@@ -370,8 +370,6 @@ void Game::updateFlagCount() {
                         + std::to_string(mineCount)
                         + " flags");
 
-    flagCounter.load();
-    //flagCounter.x = (SCREEN_WIDTH - flagCounter.getWidth()) / 2;
 }
 
 void Game::OnUpdate(double dt) {
