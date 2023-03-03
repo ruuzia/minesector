@@ -6,10 +6,10 @@ local tests = {
 }
 
 if not os.execute("cmake . -DFRONTEND_TEST=1") then
-    error("Could not run tests: CMake Failed")
+    return io.stderr:write("Could not run tests: CMake Failed\n")
 end
-if not os.execute("make") then
-    error("Could not run tests: Make Failed")
+if not os.execute("make -j") then
+    return io.stderr:write("Could not run tests: Make Failed\n")
 end
 
 for _,file_name in ipairs(tests) do
