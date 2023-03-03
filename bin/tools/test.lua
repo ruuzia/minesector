@@ -3,6 +3,7 @@
 local tests = {
     "tests/die",
     "tests/full",
+    "tests/red",
 }
 
 if not os.execute("cmake . -DFRONTEND_TEST=1") then
