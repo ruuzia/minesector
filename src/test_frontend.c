@@ -25,7 +25,7 @@ static Uint32 quit_timer(Uint32 interval, void *param) {
 }
 
 static void quit_in_a_bit(void) {
-    SDL_AddTimer(3000, quit_timer, NULL);
+    SDL_AddTimer(5000, quit_timer, NULL);
 }
 
 void closeSaveFile(void) {
