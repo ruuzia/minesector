@@ -347,8 +347,8 @@ Texture *Tile::getBackground(bool isSelected) {
     using namespace TileBG;
     if (removed) return nullptr;
     if (isHidden() and isUnflagged() and isSelected) return &backgrounds[HIGHLIGHT];
-    if (isHidden() || animState.isAnimPending()) return &backgrounds[HIDDEN];
     if (isRed) return &backgrounds[RED_SQUARE];
+    if (isHidden() || animState.isAnimPending()) return &backgrounds[HIDDEN];
     return &backgrounds[BLANK_SQUARE];
 }
 

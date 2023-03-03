@@ -636,18 +636,15 @@ void Game::onLost(Tile& mine) {
         delay += deltaDelay;
     }
 
-    // When the last mine is revealed, mark all incorrect flags
-    mines.back()->animState.anim->onstart = [this]() {
-        for (int y = 0; y < MAX_FIELD_SIZE; y++) {
-            for (int x = 0; x < MAX_FIELD_SIZE; x++) {
-                auto &tile = board[y][x];
-                if (tile.isSafe() && tile.isFlagged()) {
-                    // Incorrect flag
-                    tile.red();
-                }
+    for (int y = 0; y < MAX_FIELD_SIZE; y++) {
+        for (int x = 0; x < MAX_FIELD_SIZE; x++) {
+            auto &tile = board[y][x];
+            if (tile.isSafe() && tile.isFlagged()) {
+                // Incorrect flag
+                tile.red();
             }
         }
-    };
+    }
 }
 
 void Game::onWon() {
