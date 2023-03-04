@@ -15,10 +15,10 @@ bool Button::isMouseOver(int mouseX, int mouseY) const {
     const int sideRight = x + getWidth();
     const int sideBottom = y + getHeight();
 
-    if (mouseX < sideLeft || mouseX > sideRight) {
+    if (mouseX <= sideLeft || mouseX >= sideRight) {
         return false;
     }
-    if (mouseY < sideTop || mouseY > sideBottom) {
+    if (mouseY <= sideTop || mouseY >= sideBottom) {
         return false;
     }
 
