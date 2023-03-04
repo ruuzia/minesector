@@ -1,9 +1,4 @@
 #include "app.h"
-#include <SDL_pixels.h>
-#include <SDL_render.h>
-#include <SDL_surface.h>
-#include <SDL_video.h>
-
 // I need this on Windows for some reason
 #define SDL_MAIN_HANDLED
 
@@ -20,6 +15,7 @@
 
 #include "texture.h"
 #include "game.h"
+#include "backend.h"
 
 constexpr int SCREEN_WIDTH  = 640 * 1.2;
 constexpr int SCREEN_HEIGHT = 480 * 1.2;

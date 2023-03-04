@@ -11,6 +11,7 @@ extern Uint8 readByte(void);
 extern bool openSaveWriter(void);
 extern int writeByte(Uint8 value);
 extern void closeSaveFile(void);
+extern void test(SDL_Window *x);
 
 #ifdef __cplusplus
 }

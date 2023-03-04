@@ -4,8 +4,8 @@
 #include "game.h"
 #include "app.h"
 #include "color.h"
+#include "frontend.h"
 
-extern "C" {
 static SDL_RWops *rw;
 static std::string* getSaveFile(void) {
     char* dir = SDL_GetPrefPath("grassdne", "minesector");
@@ -40,6 +40,4 @@ int writeByte(Uint8 value) {
 void closeSaveFile(void) {
     SDL_RWclose(rw);
     rw = NULL;
-}
-
 }

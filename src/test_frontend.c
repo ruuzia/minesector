@@ -4,11 +4,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <errno.h>
-
-extern "C" void onClick(int x, int y);
-extern "C" void onAltClick(int x, int y);
-extern "C" void save(void);
-extern "C" void quit(void);
+#include "backend.h"
+#include "frontend.h"
 
 static const char *name;
 static FILE *data_writer;
