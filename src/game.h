@@ -57,6 +57,8 @@ public:
 
     int rows, cols;
 
+    int mouseX, mouseY;
+
     // std::array? why should I care?
     Tile board[MAX_FIELD_SIZE][MAX_FIELD_SIZE];
 

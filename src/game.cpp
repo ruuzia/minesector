@@ -373,7 +373,8 @@ void Game::updateFlagCount() {
 }
 
 void Game::OnUpdate(double dt) {
-    int x, y; SDL_GetMouseState(&x, &y);
+    int x = mouseX;
+    int y = mouseY;
 
     for (int r = 0; r < rows; r++) {
         for (int c = 0; c < cols; c++) {
@@ -679,7 +680,11 @@ void Game::onRevealTile(Tile& revealed) {
 }
 
 void Game::onMouseMove(SDL_MouseMotionEvent const& e) {
-    (void)e;
+    // SDL_RenderSetLogicalSize applies to mouse events
+    // but not SDL_GetMouseState so we keep track of the
+    // position ourselves
+    mouseX = e.x;
+    mouseY = e.y;
 }
 
 static void pushHiddenNeighbors(Tile& tile, std::vector<Tile*>& tiles, bool diagonals) {
