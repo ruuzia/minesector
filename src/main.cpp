@@ -1,4 +1,8 @@
 #include "app.h"
+#include <SDL_pixels.h>
+#include <SDL_render.h>
+#include <SDL_surface.h>
+#include <SDL_video.h>
 
 // I need this on Windows for some reason
 #define SDL_MAIN_HANDLED
@@ -23,6 +27,7 @@ constexpr int SCREEN_HEIGHT = 480 * 1.2;
 #define TOUCH_HOLD_TICKS 200
 
 SDL_Renderer *renderer;
+static Game *game;
 
 static bool running = true;
 
@@ -89,7 +94,8 @@ Uint32 lastFrame;
 
 // I need to use an event filter to support updating *while* resizing on windows
 // Because Windows like to block the main thread
-static int event_filter(void *game, SDL_Event *e) {
+static int event_filter(void *userdata, SDL_Event *e) {
+    (void)userdata;
     if (e->type == SDL_WINDOWEVENT && e->window.event == SDL_WINDOWEVENT_RESIZED) {
         Uint32 current = SDL_GetTicks();
 
@@ -101,8 +107,7 @@ static int event_filter(void *game, SDL_Event *e) {
             SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
             SDL_RenderClear(renderer);
                 
-            //static_cast<Game *>(game)->positionItems();
-            static_cast<Game *>(game)->OnUpdate(dt);
+            game->OnUpdate(dt);
 
             SDL_RenderPresent(renderer);
             printf("Window resize!\n");
@@ -114,7 +119,6 @@ static int event_filter(void *game, SDL_Event *e) {
 }
 
 Color bgColor = 0xE0E0E0;
-Game *game;
 
 extern "C" {
     void save(void) {
@@ -142,6 +146,39 @@ static Uint32 touchFingerDown;
     extern "C" void test_frontend_main(char **argv);
     extern "C" void test_frontend_mouse_down(SDL_MouseButtonEvent *e);
 #endif
+
+extern "C" bool screenshot(void) {
+    // Clear and redraw screen
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_RenderClear(renderer);
+    game->OnUpdate(0.0);
+
+    // Calculate positions
+    SDL_Rect viewport;
+    SDL_RenderGetViewport(renderer, &viewport);
+    float scaleX, scaleY;
+    SDL_RenderGetScale(renderer, &scaleX, &scaleY);
+    SDL_Rect area;
+    area.x = scaleX * (viewport.x + game->board[0][0].x);
+    area.y = scaleX * (viewport.y + game->board[0][0].y);
+    area.w = scaleX * Tile::SIZE * game->cols;
+    area.h = scaleY * Tile::SIZE * game->rows;
+
+    // Copy pixels to image
+    SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, area.w, area.h, 32, SDL_PIXELFORMAT_RGBA32);
+    bool res = true;
+    if (SDL_RenderReadPixels(renderer, &area, SDL_PIXELFORMAT_RGBA32, surface->pixels, surface->pitch) < 0) {
+        printf("Failed to take screenshot (%s)\n", SDL_GetError());
+        SDL_FreeSurface(surface);
+        return false;
+
+    }
+    SDL_SaveBMP(surface, "out.bmp");
+
+    SDL_FreeSurface(surface);
+    return res;
+}
 
 static void mainloop() {
     Uint32 current = SDL_GetTicks();
@@ -241,11 +278,11 @@ static void mainloop() {
 #endif
 
     game->OnUpdate(dt);
+
     SDL_RenderPresent(renderer);
 }
 
 App Sim;
-
 
 int main(int argc, char **argv) {
     (void)argc;
