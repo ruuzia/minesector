@@ -215,18 +215,21 @@ static void mainloop() {
                 printf("dt: %f\n", dt);
             }
             else if (e.key.keysym.sym == SDLK_F11) {
-                if (Sim.isFullscreen) {
-                    Sim.isFullscreen = false;
-                    SDL_SetWindowFullscreen(Sim.window, 0);
+                bool isFullscreen = SDL_GetWindowFlags(Sim.window) & SDL_WINDOW_FULLSCREEN;
+                if (isFullscreen) {
+                    if (SDL_SetWindowFullscreen(Sim.window, 0) < 0) {
+                        printf("Failed to set fullscreen (%s)\n", SDL_GetError());
+                    }
                     SDL_SetWindowSize(Sim.window, SCREEN_WIDTH, SCREEN_HEIGHT);
                 }
                 else {
-                    Sim.isFullscreen = true;
-                    SDL_SetWindowFullscreen(Sim.window, SDL_WINDOW_FULLSCREEN);
+                    if (SDL_SetWindowFullscreen(Sim.window, SDL_WINDOW_FULLSCREEN) < 0) {
+                        printf("Failed to set fullscreen (%s)\n", SDL_GetError());
+                    }
                 }
             }
             break;
-        
+
 #ifdef FRONTEND_NATIVE
         case SDL_MOUSEBUTTONDOWN:
             if (e.button.which == SDL_TOUCH_MOUSEID) {
