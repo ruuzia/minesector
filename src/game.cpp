@@ -460,7 +460,6 @@ void Game::ready() {
 
 void Game::save() {
     if (!openSaveWriter()) {
-        puts("unable to write to save file");
         return;
     }
 
