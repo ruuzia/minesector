@@ -3,7 +3,7 @@
 #include <SDL_timer.h>
 #include <assert.h>
 #include <errno.h>
-#include <errno.h>
+#include <stdbool.h>
 #include "backend.h"
 #include "frontend.h"
 
@@ -59,10 +59,6 @@ static int onEvent(void *userdata, SDL_Event *event) {
         }
     }
     return 1;
-}
-
-void test_frontend_mouse_down(SDL_MouseButtonEvent *mouse) {
-    (void)mouse;
 }
 
 bool openSaveReader(void) {
@@ -147,7 +143,7 @@ static void record() {
     }
 }
 
-void test_frontend_main(char **arg) {
+void frontend_init(char **arg) {
     if (arg[0] == NULL || arg[1] == NULL) {
         usage();
     }
@@ -162,3 +158,4 @@ void test_frontend_main(char **arg) {
     }
     SDL_AddEventWatch(onEvent, NULL);
 }
+

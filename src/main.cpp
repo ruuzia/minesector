@@ -16,6 +16,7 @@
 #include "texture.h"
 #include "game.h"
 #include "backend.h"
+#include "frontend.h"
 
 constexpr int SCREEN_WIDTH  = 640 * 1.2;
 constexpr int SCREEN_HEIGHT = 480 * 1.2;
@@ -138,11 +139,6 @@ extern "C" {
 static Uint32 touchFingerDown;
 #endif
 
-#ifdef FRONTEND_TEST
-    extern "C" void test_frontend_main(char **argv);
-    extern "C" void test_frontend_mouse_down(SDL_MouseButtonEvent *e);
-#endif
-
 extern "C" bool screenshot(void) {
     // Clear and redraw screen
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
@@ -254,12 +250,6 @@ static void mainloop() {
             break;
 #endif
 
-#ifdef FRONTEND_TEST
-        case SDL_MOUSEBUTTONDOWN:
-            test_frontend_mouse_down(&e.button);
-            break;
-#endif
-
         case SDL_MOUSEMOTION:
             game->onMouseMove(e.motion);
             break;
@@ -293,11 +283,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-#ifdef FRONTEND_TEST
-    test_frontend_main(&argv[1]);
-#else
-    (void)argv;
-#endif
+    frontend_init(&argv[1]);
 
     try {
         Game _game(Sim.window);

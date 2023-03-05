@@ -16,13 +16,18 @@ if (APPLE AND CMAKE_BUILD_TYPE MATCHES Release)
     set(STATIC_LINK 1)
 endif()
 
-if (${FRONTEND_TEST})
+if (NOT FRONTEND)
+    set(FRONTEND "NATIVE")
+endif()
+
+message(STATUS "FRONTEND=${FRONTEND}")
+
+if (FRONTEND STREQUAL "TEST")
     add_compile_definitions(FRONTEND_TEST)
-elseif(${FRONTEND_NATIVE})
+elseif(FRONTEND STREQUAL "NATIVE")
     add_compile_definitions(FRONTEND_NATIVE)
 else()
-    # Default
-    add_compile_definitions(FRONTEND_NATIVE)
+    message(FATAL_ERROR "Unkown FRONTEND=${FRONTEND} (should be TEST or NATIVE)")
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic -std=c++17")

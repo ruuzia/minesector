@@ -41,3 +41,7 @@ void closeSaveFile(void) {
     SDL_RWclose(rw);
     rw = NULL;
 }
+
+void frontend_init(char **arg) {
+    (void)arg;
+}

@@ -6,7 +6,7 @@ local tests = {
     "tests/red",
 }
 
-if not os.execute("cmake . -DFRONTEND_TEST=1") then
+if not os.execute("cmake . -DFRONTEND=TEST") then
     return io.stderr:write("Could not run tests: CMake Failed\n")
 end
 if not os.execute("make -j") then
