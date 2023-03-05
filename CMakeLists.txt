@@ -21,9 +21,11 @@ if (NOT FRONTEND)
 endif()
 
 message(STATUS "FRONTEND=${FRONTEND}")
+set(EXECUTABLE ${PROJECT_NAME})
 
 if (FRONTEND STREQUAL "TEST")
     add_compile_definitions(FRONTEND_TEST)
+    set(EXECUTABLE "testminesector")
 elseif(FRONTEND STREQUAL "NATIVE")
     add_compile_definitions(FRONTEND_NATIVE)
 else()
@@ -59,14 +61,14 @@ set(SOURCES
 
 set(WINDOWS_APP_ICON "${PROJECT_SOURCE_DIR}/icons/appicon.rc")
 
-add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SOURCES} ${WINDOWS_APP_ICON})
+add_executable(${EXECUTABLE} MACOSX_BUNDLE ${SOURCES} ${WINDOWS_APP_ICON})
 
 if (STATIC_LINK)
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2-static SDL2_image::SDL2_image-static SDL2_ttf::SDL2_ttf-static SDL2_mixer::SDL2_mixer-static)
+    target_link_libraries(${EXECUTABLE} SDL2::SDL2-static SDL2_image::SDL2_image-static SDL2_ttf::SDL2_ttf-static SDL2_mixer::SDL2_mixer-static)
 elseif(WIN32)
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf SDL2_mixer::SDL2_mixer)
+    target_link_libraries(${EXECUTABLE} SDL2::SDL2 SDL2_image::SDL2_image SDL2_ttf::SDL2_ttf SDL2_mixer::SDL2_mixer)
 else()
-    target_link_libraries(${PROJECT_NAME} SDL2::SDL2 SDL2_image SDL2_ttf SDL2_mixer)
+    target_link_libraries(${EXECUTABLE} SDL2::SDL2 SDL2_image SDL2_ttf SDL2_mixer)
 endif()
 
 if (UNIX)
@@ -92,7 +94,7 @@ file(GLOB DATA_SOUNDS "${PROJECT_SOURCE_DIR}/assets/sounds/*")
 
 #### MACOS BUNDLE BULLSHIT #####
 set(MACOSX_BUNDLE_ICON_FILE appicon.icns) # Don't include the full path
-target_sources(${PROJECT_NAME} PRIVATE ${DATA_FONTS} ${DATA_IMAGES} ${DATA_SOUNDS} icons/appicon.icns)
+target_sources(${EXECUTABLE} PRIVATE ${DATA_FONTS} ${DATA_IMAGES} ${DATA_SOUNDS} icons/appicon.icns)
 set_source_files_properties(icons/appicon.icns PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
 set_source_files_properties(${DATA_FONTS}  PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/fonts)
 set_source_files_properties(${DATA_IMAGES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources/assets/images)
@@ -104,7 +106,7 @@ endif()
 
 add_compile_definitions(RUNTIME_BASE_PATH="${RUNTIME_BASE_PATH}")
 
-install(TARGETS ${PROJECT_NAME}
+install(TARGETS ${EXECUTABLE}
         RUNTIME DESTINATION bin
         BUNDLE  DESTINATION .
 )
