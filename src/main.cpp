@@ -283,9 +283,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    frontend_init(&argv[1]);
-
     try {
+        frontend_init(&argv[1]);
         Game _game(Sim.window);
         game = &_game;
         lastFrame = SDL_GetTicks();

@@ -9,10 +9,12 @@
 
 static const char *name;
 static FILE *data_writer;
-static FILE *expected_data;
+static FILE *input_sim;
 static FILE *starting_data;
-static bool completed = false;
+static FILE *save_file;
+static bool run_completed = false;
 static bool run_succeeded = true;
+static bool finished = false;
 
 static Uint32 quit_timer(Uint32 interval, void *param) {
     (void)param;
@@ -31,17 +33,19 @@ void closeSaveFile(void) {
         starting_data = NULL;
     } else if (data_writer) {
         fclose(data_writer);
+        fclose(save_file);
         data_writer = NULL;
         quit_in_a_bit();
-    } else if (expected_data) {
+    } else if (save_file) {
         if (run_succeeded) {
             printf("%s SUCCEEDED\n", name);
         } else {
             printf("%s FAILED\n", name);
             
         }
-        fclose(expected_data);
-        expected_data = NULL;
+        fclose(save_file);
+        save_file = NULL;
+        finished = true;
         quit_in_a_bit();
     }
 }
@@ -49,7 +53,7 @@ static int onEvent(void *userdata, SDL_Event *event) {
     (void)userdata;
     if (event->type == SDL_MOUSEBUTTONDOWN) {
         SDL_MouseButtonEvent *mouse = &event->button;
-        if (expected_data) return 1;
+        if (save_file) return 1;
         if (mouse->button == SDL_BUTTON_LEFT) {
             onClick(mouse->x, mouse->y);
             fprintf(data_writer, "CLICK %d %d\n", mouse->x, mouse->y);
@@ -57,6 +61,8 @@ static int onEvent(void *userdata, SDL_Event *event) {
             onAltClick(mouse->x, mouse->y);
             fprintf(data_writer, "ALTCLICK %d %d\n", mouse->x, mouse->y);
         }
+    } else if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_RETURN && finished) {
+        quit();
     }
     return 1;
 }
@@ -70,26 +76,36 @@ Uint8 readByte(void) {
     return fgetc(starting_data);
 }
 bool openSaveWriter(void) {
+    if (finished) return false;
+    char save_file_name[1024];
+    strcpy(save_file_name, name);
+    strcat(save_file_name, ".expected");
     if (data_writer != NULL) {
-        fprintf(data_writer, "SAVEDATA");
-        return true;
-    } else if (expected_data != NULL) {
-        if (!completed) {
-            fclose(expected_data);
-            expected_data = NULL;
+        // Recording test output
+        save_file = fopen(save_file_name, "w");
+        if (save_file == NULL) {
+            printf("Failed to open %s: %s\n", save_file_name, strerror(errno));
+            return false;
         }
-        return completed;
+        return true;
     } else {
-        return false;
+        // Running test -- checking output
+        if (!run_completed) return false;
+        save_file = fopen(save_file_name, "r");
+        if (save_file == NULL) {
+            printf("Failed to open %s: %s\n", save_file_name, strerror(errno));
+            return false;
+        }
+        return true;
     }
 }
 
 int writeByte(Uint8 value) {
     if (data_writer) {
-        return fputc(value, data_writer) != EOF;
+        return fputc(value, save_file) != EOF;
     } else {
-        assert(expected_data);
-        char expected = fgetc(expected_data);
+        assert(save_file);
+        char expected = fgetc(save_file);
         if (run_succeeded && value != expected) {
             run_succeeded = false;
             printf("expected %c (%d) but got %c (%d)\n", expected, expected, value, value);
@@ -102,16 +118,16 @@ int writeByte(Uint8 value) {
 
 Uint32 process_next_command(Uint32 interval, void *param) {
     (void)param;
-    if (expected_data == NULL) return 0;
+    if (input_sim == NULL) return 0;
     int x, y;
-    if (fscanf(expected_data, "CLICK %d %d\n", &x, &y) == 2) {
+    if (fscanf(input_sim, "CLICK %d %d\n", &x, &y) == 2) {
         onClick(x, y);
         return interval;
-    } else if (fscanf(expected_data, "ALTCLICK %d %d\n", &x, &y) == 2) {
+    } else if (fscanf(input_sim, "ALTCLICK %d %d\n", &x, &y) == 2) {
         onAltClick(x, y);
         return interval;
-    } else if (fscanf(expected_data, "SAVEDATA\n") == 0) {
-        completed = true;
+    } else if (feof(input_sim)) {
+        run_completed = true;
         save();
         return 0;
     } else {
@@ -126,8 +142,8 @@ static void usage(void) {
 }
 
 static void run() {
-    expected_data = fopen(name, "r");
-    if (expected_data == NULL) {
+    input_sim = fopen(name, "r");
+    if (input_sim == NULL) {
         fprintf(stderr, "Failed to open %s (%s)\n", name, strerror(errno));
         exit(1);
     }
