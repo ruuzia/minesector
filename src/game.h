@@ -5,6 +5,7 @@
 #include "anim.h"
 #include "tile.h"
 
+#include <ctime>
 #include <vector>
 #include <array>
 #include <functional>
@@ -62,6 +63,7 @@ public:
     // std::array? why should I care?
     Tile board[MAX_FIELD_SIZE][MAX_FIELD_SIZE];
 
+    uint32_t seed;
     std::mt19937 rng;
 
     AnimState animState;

@@ -119,18 +119,22 @@ Color bgColor = 0xE0E0E0;
 
 extern "C" {
     void save(void) {
+        if (!running) return;
         game->save();
     }
 
     void onClick(int x, int y) {
+        if (!running) return;
         game->onClick(x, y);
     }
 
     void onAltClick(int x, int y) {
+        if (!running) return;
         game->onAltClick(x, y);
     }
 
     void quit(void) {
+        if (!running) return;
         running = false;
     }
 }

@@ -68,8 +68,14 @@ static int onEvent(void *userdata, SDL_Event *event) {
 }
 
 bool openSaveReader(void) {
-    starting_data = fopen("test_save.bin", "r");
-    assert(starting_data != NULL && "failed to open test start starting_data");
+    char file_name[1024];
+    strcpy(file_name, name);
+    strcat(file_name, ".initial");
+    starting_data = fopen(file_name, "r");
+    if (starting_data == NULL) {
+        printf("failed to open %s: (%s)\n", file_name, strerror(errno));
+        return false;
+    }
     return true;
 }
 Uint8 readByte(void) {
@@ -105,10 +111,13 @@ int writeByte(Uint8 value) {
         return fputc(value, save_file) != EOF;
     } else {
         assert(save_file);
-        char expected = fgetc(save_file);
+        uint8_t expected = fgetc(save_file);
         if (run_succeeded && value != expected) {
             run_succeeded = false;
             printf("expected %c (%d) but got %c (%d)\n", expected, expected, value, value);
+        }
+        if (value == 'z') {
+            printf("getting seed...\n");
         }
         return 1;
     }

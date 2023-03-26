@@ -406,7 +406,8 @@ Game::~Game() {
 Game::Game(SDL_Window *window)
     : rows(Difficulty::SIZES[1].rows)
     , cols(Difficulty::SIZES[1].cols)
-    , rng(std::random_device{}())
+    , seed(time(0))
+    , rng(seed)
     , mainFont("assets/fonts/Arbutus-Regular.ttf")
     , state(GameState::READY)
     , window(window)
@@ -439,6 +440,8 @@ void Game::ready() {
     mineCount = rows * cols * PERCENT_MINES;
     animState.kill();
 
+    printf("Seed: %0u\n", seed);
+
     resizeBoard();
 
     for (int row = 0; row < MAX_FIELD_SIZE; ++row) {
@@ -460,6 +463,7 @@ void Game::ready() {
 
 void Game::save() {
     if (!openSaveWriter()) {
+        puts("unable to write to save file");
         return;
     }
 
@@ -481,6 +485,10 @@ void Game::save() {
             writeByte(board[r][c].save());
         }
     }
+    writeByte('z');
+    uint8_t bytes[sizeof(seed)];
+    memcpy(bytes, &seed, sizeof(seed));
+    for (size_t i = 0; i < sizeof(seed); i++) writeByte(bytes[i]);
 
     writeByte('\0');
     closeSaveFile();
@@ -522,6 +530,15 @@ void Game::load() {
         tileDatas[i] = readByte();
     }
 
+    if (data != 'z') {
+        printf("Missing seed\n");
+        return;
+    }
+    uint8_t bytes[sizeof(seed)];
+    for (size_t i = 0; i < sizeof(seed); i++) bytes[i] = readByte();
+    memcpy(&seed, bytes, sizeof(seed));
+    rng.seed(seed);
+
     closeSaveFile();
 }
 
@@ -534,6 +551,7 @@ void Game::resizeBoard() {
 void Game::restartGame() {
     playAgainBtn.hidden = true;
     restartBtn.hidden = false;
+    seed = rng();
     ready();
 }
 
