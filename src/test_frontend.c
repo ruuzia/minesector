@@ -7,14 +7,22 @@
 #include "backend.h"
 #include "frontend.h"
 
+static enum { RUNNING, RECORDING, FINISHED } state;
+
+static struct {
+    FILE *expected;
+    FILE *file;
+} recorder;
+
+static struct {
+    FILE *expected;
+    FILE *sim_input;
+    bool completed;
+    bool succeeded;
+} runner;
+
 static const char *name;
-static FILE *data_writer;
-static FILE *input_sim;
-static FILE *starting_data;
-static FILE *save_file;
-static bool run_completed = false;
-static bool run_succeeded = true;
-static bool finished = false;
+static FILE *inital_savedata;
 
 static Uint32 quit_timer(Uint32 interval, void *param) {
     (void)param;
@@ -28,77 +36,98 @@ static void quit_in_a_bit(void) {
 }
 
 void closeSaveFile(void) {
-    if (starting_data) {
-        fclose(starting_data);
-        starting_data = NULL;
-    } else if (data_writer) {
-        fclose(data_writer);
-        fclose(save_file);
-        data_writer = NULL;
+    if (inital_savedata) {
+        // Reader
+        fclose(inital_savedata);
+        inital_savedata = NULL;
+        return;
+    }
+
+    switch (state) {
+    case RECORDING:
+        assert(recorder.file != NULL);
+        assert(recorder.expected != NULL);
+        fclose(recorder.file);
+        fclose(recorder.expected);
+        recorder.file = NULL;
+        state = FINISHED;
         quit_in_a_bit();
-    } else if (save_file) {
-        if (run_succeeded) {
+        return;
+
+    case RUNNING:
+        if (runner.completed) {
             printf("%s SUCCEEDED\n", name);
         } else {
             printf("%s FAILED\n", name);
             
         }
-        fclose(save_file);
-        save_file = NULL;
-        finished = true;
+        fclose(runner.expected);
+        runner.expected = NULL;
+        state = FINISHED;
         quit_in_a_bit();
+        return;
+
+    case FINISHED:
+        // do nothing
+        assert(recorder.file == NULL);
+        assert(recorder.expected == NULL);
+        assert(inital_savedata == NULL);
+        return;
     }
 }
 static int onEvent(void *userdata, SDL_Event *event) {
     (void)userdata;
-    if (event->type == SDL_MOUSEBUTTONDOWN) {
+    if (state == RECORDING && event->type == SDL_MOUSEBUTTONDOWN) {
         SDL_MouseButtonEvent *mouse = &event->button;
-        if (save_file) return 1;
+        if (recorder.expected) return 1;
         if (mouse->button == SDL_BUTTON_LEFT) {
             onClick(mouse->x, mouse->y);
-            fprintf(data_writer, "CLICK %d %d\n", mouse->x, mouse->y);
+            fprintf(recorder.file, "CLICK %d %d\n", mouse->x, mouse->y);
         } else if (mouse->button == SDL_BUTTON_RIGHT) {
             onAltClick(mouse->x, mouse->y);
-            fprintf(data_writer, "ALTCLICK %d %d\n", mouse->x, mouse->y);
+            fprintf(recorder.file, "ALTCLICK %d %d\n", mouse->x, mouse->y);
         }
-    } else if (event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_RETURN && finished) {
+    } else if (state == FINISHED && event->type == SDL_KEYDOWN && event->key.keysym.sym == SDLK_RETURN) {
         quit();
     }
     return 1;
 }
 
 bool openSaveReader(void) {
+    assert(state == RUNNING || state == RECORDING);
     char file_name[1024];
     strcpy(file_name, name);
     strcat(file_name, ".initial");
-    starting_data = fopen(file_name, "r");
-    if (starting_data == NULL) {
+    inital_savedata = fopen(file_name, "r");
+    if (inital_savedata == NULL) {
         printf("failed to open %s: (%s)\n", file_name, strerror(errno));
         return false;
     }
     return true;
 }
 Uint8 readByte(void) {
-    return fgetc(starting_data);
+    assert(state == RUNNING || state == RECORDING);
+    return fgetc(inital_savedata);
 }
 bool openSaveWriter(void) {
-    if (finished) return false;
     char save_file_name[1024];
     strcpy(save_file_name, name);
     strcat(save_file_name, ".expected");
-    if (data_writer != NULL) {
-        // Recording test output
-        save_file = fopen(save_file_name, "w");
-        if (save_file == NULL) {
+
+    switch (state) {
+    case FINISHED:
+        return false;
+    case RECORDING:
+        recorder.expected = fopen(save_file_name, "w");
+        if (recorder.expected == NULL) {
             printf("Failed to open %s: %s\n", save_file_name, strerror(errno));
             return false;
         }
         return true;
-    } else {
-        // Running test -- checking output
-        if (!run_completed) return false;
-        save_file = fopen(save_file_name, "r");
-        if (save_file == NULL) {
+    case RUNNING:
+        if (!runner.completed) return false;
+        runner.expected = fopen(save_file_name, "r");
+        if (runner.expected == NULL) {
             printf("Failed to open %s: %s\n", save_file_name, strerror(errno));
             return false;
         }
@@ -107,19 +136,20 @@ bool openSaveWriter(void) {
 }
 
 int writeByte(Uint8 value) {
-    if (data_writer) {
-        return fputc(value, save_file) != EOF;
-    } else {
-        assert(save_file);
-        uint8_t expected = fgetc(save_file);
-        if (run_succeeded && value != expected) {
-            run_succeeded = false;
+    switch (state) {
+    case RECORDING:
+        return fputc(value, recorder.expected) != EOF;
+    case RUNNING: {
+        uint8_t expected = fgetc(runner.expected);
+        if (runner.completed && value != expected) {
+            runner.completed = false;
             printf("expected %c (%d) but got %c (%d)\n", expected, expected, value, value);
         }
-        if (value == 'z') {
-            printf("getting seed...\n");
-        }
         return 1;
+    }
+    case FINISHED:
+        assert(false && "writing data while finished");
+        return 0;
     }
 }
 
@@ -127,16 +157,16 @@ int writeByte(Uint8 value) {
 
 Uint32 process_next_command(Uint32 interval, void *param) {
     (void)param;
-    if (input_sim == NULL) return 0;
+    assert(state == RUNNING);
     int x, y;
-    if (fscanf(input_sim, "CLICK %d %d\n", &x, &y) == 2) {
+    if (fscanf(runner.sim_input, "CLICK %d %d\n", &x, &y) == 2) {
         onClick(x, y);
         return interval;
-    } else if (fscanf(input_sim, "ALTCLICK %d %d\n", &x, &y) == 2) {
+    } else if (fscanf(runner.sim_input, "ALTCLICK %d %d\n", &x, &y) == 2) {
         onAltClick(x, y);
         return interval;
-    } else if (feof(input_sim)) {
-        run_completed = true;
+    } else if (feof(runner.sim_input)) {
+        runner.completed = true;
         save();
         return 0;
     } else {
@@ -151,8 +181,8 @@ static void usage(void) {
 }
 
 static void run() {
-    input_sim = fopen(name, "r");
-    if (input_sim == NULL) {
+    runner.sim_input = fopen(name, "r");
+    if (runner.sim_input == NULL) {
         fprintf(stderr, "Failed to open %s (%s)\n", name, strerror(errno));
         exit(1);
     }
@@ -161,8 +191,8 @@ static void run() {
 
 static void record() {
     printf("Creating test at %s\n", name);
-    data_writer = fopen(name, "w");
-    if (data_writer == NULL) {
+    recorder.file = fopen(name, "w");
+    if (recorder.file == NULL) {
         fprintf(stderr, "Failed to open %s (%s)\n", name, strerror(errno));
         exit(1);
     }
@@ -173,9 +203,11 @@ void frontend_init(char **arg) {
         usage();
     }
     if (strcmp(arg[0], "run") == 0) {
+        state = RUNNING;
         name = arg[1];
         run();
     } else if (strcmp(arg[0], "record") == 0) {
+        state = RECORDING;
         name = arg[1];
         record();
     } else {
