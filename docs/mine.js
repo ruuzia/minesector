@@ -28,4 +28,7 @@ mergeInto(LibraryManager.library, {
         _reader = null;
         _writer = null;
     },
+    frontend_init: function() {
+        
+    },
 });
