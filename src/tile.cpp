@@ -284,7 +284,8 @@ void Tile::dissapear() {
     removed = true;
 }
 
-int Tile::SIZE = 32;
+constexpr int TILE_BASE_SIZE = 32;
+int Tile::SIZE = TILE_BASE_SIZE;
 
 void Tile::flip(bool recurse, Uint32 delay) {
     setHidden(false);
@@ -405,7 +406,7 @@ void Tile::reposition() {
         overlays[i].setSize(SIZE, SIZE);
     }
     for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
-        numbers[i].setScale(NUMBER_SCALE * (SIZE / 32));
+        numbers[i].setScale(NUMBER_SCALE * (SIZE / (double)TILE_BASE_SIZE));
     }
 }
 
