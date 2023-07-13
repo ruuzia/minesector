@@ -840,7 +840,13 @@ void Game::loadMedia() {
     speakerBtn.onclick = [this](){
         muted = !muted;
         speakerBtn.background = &icons[muted ? Icons::MUTED : Icons::SOUND];
-        Mix_MasterVolume(muted ? 0 : MIX_MAX_VOLUME);
+
+        // Mix_MasterVolume is only available in SDL_mixer 2.6.0+
+        // So we instead mute each chunk for compatibility
+        const int volume = muted ? 0 : MIX_MAX_VOLUME;
+        for (int i = 0; i < SoundEffects::COUNT; ++i) {
+            Mix_VolumeChunk(sounds[i], volume);
+        }
     };
 
     {
