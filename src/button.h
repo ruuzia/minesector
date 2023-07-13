@@ -25,14 +25,20 @@ public:
 
     virtual void render(bool isSelected)  {
         (void)isSelected;
-        background->render(x, y);
+        background->renderWithScale(x, y, scale);
     }
 
-    virtual int getWidth() const { return background->getWidth(); }
-    virtual int getHeight() const { return background->getHeight(); }
+    virtual int getWidth() const { return background->getWidth() * scale; }
+    virtual int getHeight() const { return background->getHeight() * scale; }
+
+    virtual void setScale(double scale_) {
+        scale = scale_;
+    }
 
     // Just leaving position public for now
     int x, y;
+
+    double scale = 1;
 
     bool hidden;
 private:
@@ -79,7 +85,7 @@ public:
 
     Text text;
 
-    void setScale(double scale_) {
+    void setScale(double scale_) override {
         scale = scale_;
         text.setScale(scale);
     }

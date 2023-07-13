@@ -29,9 +29,13 @@ public:
     void free();
 
     // Render at a point on screen
-    void render(int x, int y, SDL_Rect *clip = nullptr, double angle = 0.0, SDL_Point *center = nullptr, SDL_RendererFlip flip = SDL_FLIP_NONE) const;
+    void render(int x, int y, SDL_Rect *clip = nullptr, double angle = 0.0, SDL_Point *center = nullptr) const;
 
     void renderPart(int x, int y, const SDL_Rect *rect, bool = true) const;
+
+    void renderWithHeight(int x, int y, int h) const;
+    void renderWithWidth(int x, int y, int w) const;
+    void renderWithScale(int x, int y, double scale) const;
 
     [[nodiscard]] int getWidth() const { return width; }
     [[nodiscard]] int getHeight() const { return height; }
@@ -39,6 +43,10 @@ public:
     void setSize(int w, int h) {
         width = w;
         height = h;
+    }
+
+    void scaleToHeight(int h) {
+        setScale((double)h / (double)height);
     }
 
     void setScale(double f) {

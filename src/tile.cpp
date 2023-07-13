@@ -22,14 +22,14 @@ namespace Uncover {
 
 constexpr float NUMBER_SCALE = 0.8;
 
-std::string TILE_FILES[TileBG::COUNT] = {
+static std::string TILE_FILES[TileBG::COUNT] = {
     "assets/images/square_blank.png",
     "assets/images/tile.png",
     "assets/images/hovered_tile.png",
     "assets/images/square_red.png",
 };
 
-std::string ICON_FILES[TileOverlay::COUNT] = {
+static std::string ICON_FILES[TileOverlay::COUNT] = {
     "assets/images/flag.png",
     "assets/images/mine.png",
 };

@@ -1,6 +1,8 @@
 #include "texture.h"
+#include "text.h"
 #include <SDL_rect.h>
 #include <SDL_image.h>
+#include <SDL_render.h>
 #include <SDL_ttf.h>
 #include <string>
 
@@ -18,9 +20,9 @@ Texture::~Texture() {
     free();
 }
 
-void Texture::render(int x, int y, SDL_Rect *clip, double angle, SDL_Point *center, SDL_RendererFlip flip) const {
+void Texture::render(int x, int y, SDL_Rect *clip, double angle, SDL_Point *center) const {
     const SDL_Rect dstrect = { x, y, width, height };
-    SDL_RenderCopyEx(renderer, texture, clip, &dstrect, angle, center, flip);
+    SDL_RenderCopyEx(renderer, texture, clip, &dstrect, angle, center, SDL_FLIP_NONE);
 }
 
 void Texture::renderPart(int x, int y, const SDL_Rect *rect, bool stretchSource) const {
@@ -34,6 +36,23 @@ void Texture::renderPart(int x, int y, const SDL_Rect *rect, bool stretchSource)
     const SDL_Rect dstrect = { x + rect->x, y + rect->y, rect->w, rect->h };
 
     SDL_RenderCopy(renderer, texture, stretchSource ? NULL : &srcrect, &dstrect);
+}
+
+void Texture::renderWithHeight(int x, int y, int h) const {
+    int scale = h / imgHeight;
+    const SDL_Rect dstrect = { x, y, scale * imgWidth, scale * imgHeight };
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+}
+
+void Texture::renderWithWidth(int x, int y, int w) const {
+    int scale = w / imgWidth;
+    const SDL_Rect dstrect = { x, y, scale * imgWidth, scale * imgHeight };
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
+}
+
+void Texture::renderWithScale(int x, int y, double scale) const {
+    const SDL_Rect dstrect = { x, y, (int)(scale * imgWidth), (int)(scale * imgHeight) };
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
 }
 
 void Texture::free() {

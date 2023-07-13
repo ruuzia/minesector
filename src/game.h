@@ -27,7 +27,15 @@ namespace SoundEffects {
         WHOOSH  = 1,
         BLIP    = 2,
         EXPLODE = 3,
-        COUNT   = 4,
+        COUNT,
+    };
+}
+
+namespace Icons {
+    enum {
+        SOUND = 0,
+        MUTED = 1,
+        COUNT,
     };
 }
 
@@ -86,8 +94,11 @@ private:
     TextButton restartBtn;
     TextButton playAgainBtn;
     std::vector<TextButton> difficultyBtns;
+    Button speakerBtn;
 
     std::vector<Button*> buttons;
+
+    static Texture icons[Icons::COUNT];
 
     TextButton& activeRestartButton();
 

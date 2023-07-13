@@ -1,4 +1,5 @@
 #include "game.h"
+#include <SDL_mixer.h>
 #include <SDL_mouse.h>
 #include <string>
 #include <algorithm>
@@ -76,20 +77,28 @@ namespace Difficulty {
     };
 }
 
-float SOUND_VOLUMES[SoundEffects::COUNT] = {
+static float SOUND_VOLUMES[SoundEffects::COUNT] = {
     0.7,
     0.5,
     0.3,
     0.33,
 };
 
-std::string SOUND_FILES[SoundEffects::COUNT] = {
+static std::string SOUND_FILES[SoundEffects::COUNT] = {
     "assets/sounds/flag.wav",
     "assets/sounds/whoosh.wav",
     "assets/sounds/blip.wav",
     "assets/sounds/explode.wav",
 };
 
+static std::string ICON_FILES[Icons::COUNT] = {
+    "assets/images/icon_sound.png",
+    "assets/images/icon_muted.png",
+};
+
+Texture Game::icons[Icons::COUNT];
+
+static bool muted = false;
 static void playSoundEffect(int effect) {
     int channel = Mix_PlayChannel(-1, Game::sounds[effect], 0);
     if (channel != -1) {
@@ -414,6 +423,7 @@ Game::Game(SDL_Window *window)
     , flagCounter(mainFont.raw(), "0/? flags", 0xA00000)
     , restartBtn(mainFont.raw(), "Restart!", 0xFF1000)
     , playAgainBtn(mainFont.raw(), "Play again?", 0x00C000)
+    , speakerBtn()
 {
     loadMedia();
 }
@@ -810,6 +820,10 @@ void Game::generateMines() {
 
 void Game::loadMedia() {
     // TODO: immediate-mode style UI
+
+    for (int i = 0; i < Icons::COUNT; ++i) {
+        icons[i].loadFile(ICON_FILES[i]);
+    }
     Tile::loadMedia(mainFont.raw());
 
     restartBtn.setScale(0.5);
@@ -821,6 +835,13 @@ void Game::loadMedia() {
 
     restartBtn.onclick = [this](){ restartGame(); };
     playAgainBtn.onclick = [this](){ restartGame(); };
+
+    speakerBtn.background = &icons[Icons::SOUND];
+    speakerBtn.onclick = [this](){
+        muted = !muted;
+        speakerBtn.background = &icons[muted ? Icons::MUTED : Icons::SOUND];
+        Mix_MasterVolume(muted ? 0 : MIX_MAX_VOLUME);
+    };
 
     {
 
@@ -852,6 +873,7 @@ void Game::loadMedia() {
 
     buttons.push_back(&restartBtn);
     buttons.push_back(&playAgainBtn);
+    buttons.push_back(&speakerBtn);
     for (auto& btn : difficultyBtns) buttons.push_back(&btn);
 
 }
@@ -891,6 +913,7 @@ void Game::positionItems() {
     flagCounter.y = 10;
 
 
+    // set x to right edge of board
     x += cols * Tile::SIZE;
     y = 0;
     for (auto it = difficultyBtns.rbegin(); it != difficultyBtns.rend(); ++it) {
@@ -907,7 +930,10 @@ void Game::positionItems() {
     playAgainBtn.setX(x);
     playAgainBtn.setY(y);
 
-
+    speakerBtn.setScale((double)playAgainBtn.getHeight() / (double)speakerBtn.background->getHeight());
+    x -= speakerBtn.getWidth() + 10;
+    speakerBtn.x = x;
+    speakerBtn.y = y;
 
     if (false && y > SCREEN_HEIGHT) {
         SDL_SetWindowSize(window, SCREEN_WIDTH, y);
