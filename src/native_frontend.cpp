@@ -44,7 +44,7 @@ void frontend_init(char **arg) {
         }
         save_file_path = arg[1];
     } else {
-        char* dir = SDL_GetPrefPath("grassdne", "minesector");
+        char* dir = SDL_GetPrefPath("rzia.dev", "minesector");
         if (dir == NULL) {
             throw std::runtime_error("Error getting the pref dir");
         }
