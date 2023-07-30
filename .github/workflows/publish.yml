@@ -82,33 +82,34 @@ jobs:
         overwrite: true
         tag: ${{ env.TAG }}
 
-  publish-macos:
-    name: Publish MacOS
-    runs-on: macos-11
-
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Install dependencies
-      run: brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
-    
-    - name: Configure CMake
-      run: cmake . -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build
-      run: make -j
-
-    - name: Pack Drag & Drop
-      run: cpack -G "DragNDrop"
-      
-    - name: Upload package
-      uses: svenstaro/upload-release-action@v2
-      with:
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: minesector.dmg
-        asset_name: minesector-macos-x86_64.dmg
-        overwrite: true
-        tag: ${{ env.TAG }} 
+  # TODO: MacOS build doesn't work anymore
+  # publish-macos:
+  #   name: Publish MacOS
+  #   runs-on: macos-11
+  #
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #  
+  #   - name: Install dependencies
+  #     run: brew install sdl2 sdl2_image sdl2_ttf sdl2_mixer
+  #  
+  #   - name: Configure CMake
+  #     run: cmake . -DCMAKE_BUILD_TYPE=Release
+  #
+  #   - name: Build
+  #     run: make -j
+  #
+  #   - name: Pack Drag & Drop
+  #     run: cpack -G "DragNDrop"
+  #    
+  #   - name: Upload package
+  #     uses: svenstaro/upload-release-action@v2
+  #     with:
+  #       repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #       file: minesector.dmg
+  #       asset_name: minesector-macos-x86_64.dmg
+  #       overwrite: true
+  #       tag: ${{ env.TAG }} 
 
   publish-win64:
     name: Publish Windows
