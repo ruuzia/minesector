@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.rzia.minesector</id>
+  <project_license>MIT</project_license>
+  <metadata_license>MIT</metadata_license>
+  <content_rating type="oars-1.1"/>
+  <name>Neovim</name>
+  <summary>Snazzy Minesweeper-based game</summary>
+
+  <description>
+    <p>Native Minesweeper game made with SDL2.</p>
+  </description>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://rzia.dev/minesector/data/example.png</image>
+    </screenshot>
+  </screenshots>
+
+  <releases>
+    <release date="2023-07-31" version="1.1.4"/>
+    <release date="2023-07-30" version="1.1.3"/>
+  </releases>
+
+  <launchable type="desktop-id">minesector.desktop</launchable>
+  <url type="homepage">https://github.com/grassdne/minsector/</url>
+  <url type="bugtracker">https://github.com/grassdne/minesector/issues</url>
+  <provides>
+    <binary>minesector</binary>
+    <id>minesector</id>
+  </provides>
+</component>
