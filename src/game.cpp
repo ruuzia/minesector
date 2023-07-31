@@ -67,6 +67,8 @@ constexpr float PERCENT_MINES = 0.15;
 
 constexpr int STARTING_SAFE_COUNT = 15;
 
+constexpr double UI_COLOR_MOD = 0.3;
+
 namespace Difficulty {
     constexpr struct {int cols; int rows; } SIZES[] = { {10, 8}, {15, 12}, {20, 15} };
     const std::string STRINGS[] = {"Easy", "Medium", "Hard"};
@@ -824,6 +826,10 @@ void Game::loadMedia() {
     for (int i = 0; i < Icons::COUNT; ++i) {
         icons[i].loadFile(ICON_FILES[i]);
     }
+
+    icons[Icons::SOUND].setMultColor(UI_COLOR_MOD, UI_COLOR_MOD, UI_COLOR_MOD);
+    icons[Icons::MUTED].setMultColor(UI_COLOR_MOD, UI_COLOR_MOD, UI_COLOR_MOD);
+
     Tile::loadMedia(mainFont.raw());
 
     restartBtn.setScale(0.5);
@@ -835,6 +841,7 @@ void Game::loadMedia() {
 
     restartBtn.onclick = [this](){ restartGame(); };
     playAgainBtn.onclick = [this](){ restartGame(); };
+
 
     speakerBtn.background = &icons[Icons::SOUND];
     speakerBtn.onclick = [this](){
