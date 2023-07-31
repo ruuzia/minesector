@@ -4,7 +4,7 @@
   <project_license>MIT</project_license>
   <metadata_license>MIT</metadata_license>
   <content_rating type="oars-1.1"/>
-  <name>Neovim</name>
+  <name>MineSector</name>
   <summary>Snazzy Minesweeper-based game</summary>
 
   <description>
