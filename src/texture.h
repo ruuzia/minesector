@@ -55,7 +55,7 @@ public:
     }
 
     void setMultColor(double r, double g, double b) {
-        SDL_SetTextureColorMod(texture, (Uint8)r*255, (Uint8)g*255, (Uint8)b*255);
+        SDL_SetTextureColorMod(texture, (Uint8)(r*255), (Uint8)(g*255), (Uint8)(b*255));
     }
 
     [[nodiscard]] bool loaded() const {
