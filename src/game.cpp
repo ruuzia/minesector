@@ -84,10 +84,10 @@ float SOUND_VOLUMES[SoundEffects::COUNT] = {
 };
 
 std::string SOUND_FILES[SoundEffects::COUNT] = {
-    "assets/sounds/flag.wav",
-    "assets/sounds/whoosh.wav",
-    "assets/sounds/blip.wav",
-    "assets/sounds/explode.wav",
+    "assets/sounds/inhale.wav",
+    "assets/sounds/exhale.wav",
+    "assets/sounds/drill.wav",
+    "assets/sounds/explode_2.wav",
 };
 
 static void playSoundEffect(int effect) {
