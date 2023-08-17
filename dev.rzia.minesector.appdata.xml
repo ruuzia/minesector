@@ -13,7 +13,7 @@
 
   <screenshots>
     <screenshot type="default">
-      <image>https://rzia.dev/minesector/data/example.png</image>
+      <image>https://github.com/grassdne/minesector/raw/master/example.png</image>
     </screenshot>
   </screenshots>
 
@@ -23,7 +23,7 @@
   </releases>
 
   <launchable type="desktop-id">minesector.desktop</launchable>
-  <url type="homepage">https://github.com/grassdne/minsector/</url>
+  <url type="homepage">https://github.com/grassdne/minesector/</url>
   <url type="bugtracker">https://github.com/grassdne/minesector/issues</url>
   <provides>
     <binary>minesector</binary>
