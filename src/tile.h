@@ -44,13 +44,6 @@ class Game;
 
 class Tile : public Button {
 public:
-    static Texture backgrounds[TileBG::COUNT];
-    static Texture overlays[TileOverlay::COUNT];
-    static Texture numbers[NUMBER_TILES_COUNT];
-    static void loadMedia();
-    static void reposition();
-    static void free();
-
     int getWidth() const override { return SIZE; }
     int getHeight() const override { return SIZE; }
 

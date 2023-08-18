@@ -352,14 +352,3 @@ void Tile::render(bool isSelected) {
         fg->render(x + (SIZE - fg->getWidth()) / 2, y + (SIZE - fg->getHeight()) / 2);
     }
 }
-
-void Tile::loadMedia() {
-    reposition();
-}
-
-void Tile::reposition() {
-}
-
-void Tile::free() {
-}
-

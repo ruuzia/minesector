@@ -405,7 +405,6 @@ void Game::OnUpdate(double dt) {
 }
 
 Game::~Game() {
-    Tile::free();
     for (int i = 0; i < SoundEffects::COUNT; ++i) {
         Mix_FreeChunk(sounds[i]);
         sounds[i] = nullptr;
@@ -865,8 +864,6 @@ void Game::loadMedia() {
         tileOverlays[i].loadFile(ICON_FILES[i]);
     }
     tileOverlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
-
-    Tile::loadMedia();
 
     restartBtn.setScale(0.5);
     restartBtn.load();
