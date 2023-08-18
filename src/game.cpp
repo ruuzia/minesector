@@ -858,7 +858,6 @@ void Game::loadMedia() {
     }
 
     for (int i = 0; i < NUMBER_TILES_COUNT; ++i) {
-        printf("%d\n", i);
         const char num[] = {char(i+1 + '0'), '\0'};
     
         const Color color = TILE_NUMBER_COLORS[i];
