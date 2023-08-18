@@ -8,12 +8,13 @@ Text::Text(TTF_Font * font, std::string string_, Color color)
 }
 
 void Text::load() {
+    if (loaded) return;
     tex.loadText(font, string.c_str(), color.as_sdl());
     tex.setScale(scale);
     loaded = true;
 }
 
 void Text::render() {
-    if (!loaded) load();
+    load();
     tex.render(x, y);
 }

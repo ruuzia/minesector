@@ -31,16 +31,18 @@ static bool running = true;
 App::App() : isFullscreen{}, window{} {}
 
 App::~App() {
-        if (renderer) SDL_DestroyRenderer(renderer);
-        renderer = nullptr;
+    // Crashes on Wayland
+    // Maybe we're freeing stuff on the wrong order?
+    /* if (renderer) SDL_DestroyRenderer(renderer); */
+    /* renderer = nullptr; */
 
-        if (window) SDL_DestroyWindow(window);
-        window = nullptr;
+    if (window) SDL_DestroyWindow(window);
+    window = nullptr;
 
-        IMG_Quit();
-        TTF_Quit();
-        Mix_Quit();
-        SDL_Quit();
+    IMG_Quit();
+    TTF_Quit();
+    Mix_Quit();
+    SDL_Quit();
 }
 
 void App::init() {

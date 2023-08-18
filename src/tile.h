@@ -46,8 +46,8 @@ class Tile : public Button {
 public:
     static Texture backgrounds[TileBG::COUNT];
     static Texture overlays[TileOverlay::COUNT];
-    static Texture numbers[1 + NUMBER_TILES_COUNT];
-    static void loadMedia(TTF_Font *font);
+    static Texture numbers[NUMBER_TILES_COUNT];
+    static void loadMedia();
     static void reposition();
     static void free();
 

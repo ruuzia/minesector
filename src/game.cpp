@@ -98,8 +98,6 @@ static std::string ICON_FILES[Icons::COUNT] = {
     "assets/images/icon_muted.png",
 };
 
-Texture Game::icons[Icons::COUNT];
-
 static bool muted = false;
 static void playSoundEffect(int effect) {
     int channel = Mix_PlayChannel(-1, Game::sounds[effect], 0);
@@ -629,7 +627,7 @@ void Game::onLost(Tile& mine) {
     mine.red();
 
     auto detonationAnim = new DetonationAnim {
-        Tile::backgrounds[TileBG::HIDDEN],
+        tileBackgrounds[TileBG::HIDDEN],
         rng, {mine.x, mine.y},
         SDL_Rect{board[0][0].x, board[0][0].y, cols * Tile::SIZE, rows * Tile::SIZE },
     };
@@ -820,6 +818,27 @@ void Game::generateMines() {
     updateFlagCount();
 }
 
+constexpr int TILE_BASE_SIZE = 32;
+constexpr float NUMBER_SCALE = 0.8;
+
+const Color TILE_NUMBER_COLORS[] = {
+    0x1300d8,
+    0x02850e,
+    0xcb001e,
+    0x130e46,
+    0x003e14,
+    0x460202,
+    0x986207,
+    0x7100c7,
+};
+
+static std::string TILE_FILES[TileBG::COUNT] = {
+    "assets/images/square_blank.png",
+    "assets/images/tile.png",
+    "assets/images/hovered_tile.png",
+    "assets/images/square_red.png",
+};
+
 void Game::loadMedia() {
     // TODO: immediate-mode style UI
 
@@ -830,7 +849,24 @@ void Game::loadMedia() {
     icons[Icons::SOUND].setMultColor(UI_COLOR_MOD, UI_COLOR_MOD, UI_COLOR_MOD);
     icons[Icons::MUTED].setMultColor(UI_COLOR_MOD, UI_COLOR_MOD, UI_COLOR_MOD);
 
-    Tile::loadMedia(mainFont.raw());
+    for (int i = 0; i < TileBG::COUNT; ++i) {
+        tileBackgrounds[i].loadFile(TILE_FILES[i]);
+    }
+
+    for (int i = 0; i < NUMBER_TILES_COUNT; ++i) {
+        printf("%d\n", i);
+        const char num[] = {char(i+1 + '0'), '\0'};
+    
+        const Color color = TILE_NUMBER_COLORS[i];
+        tileNumbers[i].loadText(mainFont.raw(), num, color.as_sdl());
+    }
+
+    for (int i = 0; i < TileOverlay::COUNT; ++i) {
+        tileOverlays[i].loadFile(ICON_FILES[i]);
+    }
+    tileOverlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
+
+    Tile::loadMedia();
 
     restartBtn.setScale(0.5);
     restartBtn.load();
@@ -909,7 +945,18 @@ void Game::positionItems() {
     //int x = (SCREEN_WIDTH - cols*Tile::SIZE) / 2;
     Tile::SIZE = std::min((SCREEN_WIDTH) / cols, (SCREEN_HEIGHT - y) / rows);
     int x = (SCREEN_WIDTH - cols*Tile::SIZE) / 2;
-    Tile::reposition();
+
+    for (int i = 0; i < TileOverlay::COUNT; ++i) {
+        tileOverlays[i].setSize(Tile::SIZE, Tile::SIZE);
+    }
+    for (int i = 0; i < TileBG::COUNT; ++i) {
+        tileBackgrounds[i].setSize(Tile::SIZE, Tile::SIZE);
+    }
+
+    for (int i = 0; i < NUMBER_TILES_COUNT; ++i) {
+        tileNumbers[i].setScale(NUMBER_SCALE * (Tile::SIZE / (double)TILE_BASE_SIZE));
+    }
+
     for (int row = 0; row < rows; ++row) {
         for (int col = 0; col < cols; ++col) {
             board[row][col].x = x + col * Tile::SIZE;

@@ -20,30 +20,9 @@ namespace Uncover {
     constexpr double TIME = 1.0;
 }
 
-constexpr float NUMBER_SCALE = 0.8;
-
-static std::string TILE_FILES[TileBG::COUNT] = {
-    "assets/images/square_blank.png",
-    "assets/images/tile.png",
-    "assets/images/hovered_tile.png",
-    "assets/images/square_red.png",
-};
-
 static std::string ICON_FILES[TileOverlay::COUNT] = {
     "assets/images/flag.png",
     "assets/images/mine.png",
-};
-
-const Color NUMBER_COLORS[] = {
-    0, // Number 0 has no text!
-    0x1300d8,
-    0x02850e,
-    0xcb001e,
-    0x130e46,
-    0x003e14,
-    0x460202,
-    0x986207,
-    0x7100c7,
 };
 
 enum TileAnim {
@@ -243,7 +222,7 @@ int Tile::countTouchingMines() const {
 void Tile::playFlagAnim() {
     if (animState.isAnimActive(TileAnim::FLAG_ANIM)) return;
 
-    auto flagAnim = new FlagAnim(&overlays[TileOverlay::FLAG], {x, y}, flagged);
+    auto flagAnim = new FlagAnim(&game->tileOverlays[TileOverlay::FLAG], {x, y}, flagged);
     animState.play(TileAnim::FLAG_ANIM, flagAnim);
 }
 
@@ -310,7 +289,7 @@ void Tile::flip(bool recurse, Uint32 delay) {
 }
 
 void Tile::playUncoverAnim(Uint32 delay) {
-    auto uncoverAnim = new UncoverAnim(&backgrounds[TileBG::HIDDEN], {x, y}, game->rng);
+    auto uncoverAnim = new UncoverAnim(&game->tileBackgrounds[TileBG::HIDDEN], {x, y}, game->rng);
 
     animState.play(TileAnim::UNCOVER, uncoverAnim, delay);
 
@@ -347,19 +326,20 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
 Texture *Tile::getBackground(bool isSelected) {
     using namespace TileBG;
     if (removed) return nullptr;
-    if (isHidden() and isUnflagged() and isSelected) return &backgrounds[HIGHLIGHT];
-    if (isRed) return &backgrounds[RED_SQUARE];
-    if (isHidden() || animState.isAnimPending()) return &backgrounds[HIDDEN];
-    return &backgrounds[BLANK_SQUARE];
+    if (isHidden() and isUnflagged() and isSelected) return &game->tileBackgrounds[HIGHLIGHT];
+    if (isRed) return &game->tileBackgrounds[RED_SQUARE];
+    if (isHidden() || animState.isAnimPending()) return &game->tileBackgrounds[HIDDEN];
+    return &game->tileBackgrounds[BLANK_SQUARE];
 }
 
 Texture *Tile::getOverlay(void) {
     using namespace TileOverlay;
     if (removed) return nullptr;
     if (isHidden() && isFlagged() &&
-        !animState.isAnimActive(TileAnim::FLAG_ANIM)) return &overlays[FLAG];
-    if (isRevealed() && isSafe() && !animState.isAnimPending(TileAnim::UNCOVER)) return &numbers[countTouchingMines()];
-    if (isRevealed() && isMine() && !animState.isAnimPending(TileAnim::REVEALMINE)) return &overlays[MINE];
+        !animState.isAnimActive(TileAnim::FLAG_ANIM)) return &game->tileOverlays[FLAG];
+    size_t neighbours = countTouchingMines();
+    if (isRevealed() && isSafe() && !animState.isAnimPending(TileAnim::UNCOVER)) return neighbours == 0 ? nullptr : &game->tileNumbers[neighbours - 1];
+    if (isRevealed() && isMine() && !animState.isAnimPending(TileAnim::REVEALMINE)) return &game->tileOverlays[MINE];
     return nullptr;
 }
 
@@ -373,41 +353,11 @@ void Tile::render(bool isSelected) {
     }
 }
 
-Texture Tile::backgrounds[TileBG::COUNT];
-Texture Tile::overlays[TileOverlay::COUNT];
-Texture Tile::numbers[1 + NUMBER_TILES_COUNT];
-
-void Tile::loadMedia(TTF_Font *font) {
-    for (int i = 0; i < TileBG::COUNT; ++i) {
-        Tile::backgrounds[i].loadFile(TILE_FILES[i]);
-    }
-
-    for (int i = 0; i < TileOverlay::COUNT; ++i) {
-        overlays[i].loadFile(ICON_FILES[i]);
-    }
-    overlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
-
-    for (int i = 1; i <= NUMBER_TILES_COUNT; ++i) {
-        const char num[] = {char(i + '0'), '\0'};
-
-        const Color color = NUMBER_COLORS[i];
-        numbers[i].loadText(font, num, color.as_sdl());
-    }
-
+void Tile::loadMedia() {
     reposition();
 }
 
 void Tile::reposition() {
-    for (int i = 0; i < TileBG::COUNT; ++i) {
-        Tile::backgrounds[i].setSize(SIZE, SIZE);
-    }
-
-    for (int i = 0; i < TileOverlay::COUNT; ++i) {
-        overlays[i].setSize(SIZE, SIZE);
-    }
-    for (int i = 1; i <= NUMBER_TILES_COUNT; ++i) {
-        numbers[i].setScale(NUMBER_SCALE * (SIZE / (double)TILE_BASE_SIZE));
-    }
 }
 
 void Tile::free() {

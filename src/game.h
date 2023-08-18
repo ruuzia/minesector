@@ -83,8 +83,11 @@ public:
     static Mix_Chunk* sounds[SoundEffects::COUNT];
 
     Font mainFont;
-
     int state;
+
+    Texture tileBackgrounds[TileBG::COUNT];
+    Texture tileOverlays[TileOverlay::COUNT];
+    Texture tileNumbers[NUMBER_TILES_COUNT];
 private:
     SDL_Window *window;
 
@@ -96,7 +99,7 @@ private:
 
     std::vector<Button*> buttons;
 
-    static Texture icons[Icons::COUNT];
+    Texture icons[Icons::COUNT];
 
     TextButton& activeRestartButton();
 
