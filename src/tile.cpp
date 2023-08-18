@@ -20,11 +20,6 @@ namespace Uncover {
     constexpr double TIME = 1.0;
 }
 
-static std::string ICON_FILES[TileOverlay::COUNT] = {
-    "assets/images/flag.png",
-    "assets/images/mine.png",
-};
-
 enum TileAnim {
     FLAG_ANIM = 1,
     UNCOVER,

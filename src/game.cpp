@@ -98,6 +98,11 @@ static std::string ICON_FILES[Icons::COUNT] = {
     "assets/images/icon_muted.png",
 };
 
+static std::string OVERLAY_FILES[TileOverlay::COUNT] = {
+    "assets/images/flag.png",
+    "assets/images/mine.png",
+};
+
 static bool muted = false;
 static void playSoundEffect(int effect) {
     int channel = Mix_PlayChannel(-1, Game::sounds[effect], 0);
@@ -861,7 +866,7 @@ void Game::loadMedia() {
     }
 
     for (int i = 0; i < TileOverlay::COUNT; ++i) {
-        tileOverlays[i].loadFile(ICON_FILES[i]);
+        tileOverlays[i].loadFile(OVERLAY_FILES[i]);
     }
     tileOverlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
 
