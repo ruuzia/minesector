@@ -17,10 +17,10 @@ Exe = function(cmd)
     return success, code
 end
 
-if not Exe("cmake . -DFRONTEND=TEST && make -j") then
+if not Exe("cmake . -DFRONTEND=TEST -G Ninja && ninja") then
     return io.stderr:write("Could not run tests: Failed to build testminesector\n")
 end
-if not Exe("cmake . -DFRONTEND=NATIVE && make -j") then
+if not Exe("cmake . -DFRONTEND=NATIVE -G Ninja && ninja") then
     return io.stderr:write("Could not run tests: Failed to build minesector\n")
 end
 
