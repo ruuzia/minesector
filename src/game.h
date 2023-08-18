@@ -40,8 +40,6 @@ namespace Icons {
 }
 
 
-#define COUNT_TILE_NUMBERS 8
-
 #define MAX_FIELD_SIZE 50
 
 class Game {

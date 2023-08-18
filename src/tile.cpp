@@ -387,7 +387,7 @@ void Tile::loadMedia(TTF_Font *font) {
     }
     overlays[TileOverlay::MINE].setMultColor(0.0, 0.0, 0.0);
 
-    for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
+    for (int i = 1; i <= NUMBER_TILES_COUNT; ++i) {
         const char num[] = {char(i + '0'), '\0'};
 
         const Color color = NUMBER_COLORS[i];
@@ -405,7 +405,7 @@ void Tile::reposition() {
     for (int i = 0; i < TileOverlay::COUNT; ++i) {
         overlays[i].setSize(SIZE, SIZE);
     }
-    for (int i = 1; i <= COUNT_TILE_NUMBERS; ++i) {
+    for (int i = 1; i <= NUMBER_TILES_COUNT; ++i) {
         numbers[i].setScale(NUMBER_SCALE * (SIZE / (double)TILE_BASE_SIZE));
     }
 }
