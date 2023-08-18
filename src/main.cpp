@@ -109,7 +109,6 @@ static int event_filter(void *userdata, SDL_Event *e) {
             game->OnUpdate(dt);
 
             SDL_RenderPresent(renderer);
-            printf("Window resize!\n");
         }
     }
 
