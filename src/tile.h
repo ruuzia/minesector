@@ -78,6 +78,7 @@ public:
     void red();
     void mouseEnter() override;
     void dissapear();
+    bool isClickable();
 
     bool isRed;
     bool removed;

@@ -582,17 +582,14 @@ static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
 
 void Game::onClick(int x, int y) {
     Tile *currentHover = getTileUnderMouse(*this, x, y);
-    if (!(state & GameState::OVER) && currentHover) {
-        // Tile is hovered over
-        if (currentHover->isHidden() && currentHover->isUnflagged()) {
-            if (state & GameState::STARTED) {
-                currentHover->flip();
-                onRevealTile(*currentHover);
-            } else {
-                // Build starting area
-                generateStartingArea(*currentHover);
-                state |= GameState::STARTED;
-            }
+    if (currentHover && currentHover->isClickable()) {
+        if (state & GameState::STARTED) {
+            currentHover->flip();
+            onRevealTile(*currentHover);
+        } else {
+            // Build starting area
+            generateStartingArea(*currentHover);
+            state |= GameState::STARTED;
         }
     } else {
         for (auto btn : buttons) {

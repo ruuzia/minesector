@@ -321,10 +321,14 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
 Texture *Tile::getBackground(bool isSelected) {
     using namespace TileBG;
     if (removed) return nullptr;
-    if (isHidden() and isUnflagged() and isSelected) return &game->tileBackgrounds[HIGHLIGHT];
+    if (isSelected && isClickable()) return &game->tileBackgrounds[HIGHLIGHT];
     if (isRed) return &game->tileBackgrounds[RED_SQUARE];
     if (isHidden() || animState.isAnimPending()) return &game->tileBackgrounds[HIDDEN];
     return &game->tileBackgrounds[BLANK_SQUARE];
+}
+
+bool Tile::isClickable() {
+    return isHidden() && isUnflagged() && !(game->state & GameState::OVER);
 }
 
 Texture *Tile::getOverlay(void) {
