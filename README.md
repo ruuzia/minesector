@@ -6,7 +6,7 @@ Pretty classic Minesweeper. Web Demo deployed [here](https://grassdne.github.io/
 
 This uses only [SDL2](https://www.libsdl.org/) and extension libraries [SDL_image](https://wiki.libsdl.org/SDL_image/), [SDL_ttf](https://wiki.libsdl.org/SDL_ttf/), and [SDL_mixer](https://wiki.libsdl.org/SDL_mixer/).
 
-Built on Unix with Clang or GCC and Windows with MinGW. 
+Built with CMake (unfortunately).
 
 ## Quickstart
 Install the appropriate auto-built binary from [latest release](https://github.com/grassdne/minesector/releases/latest).
@@ -69,6 +69,3 @@ To run the program without `make install`, you must set the MINERUNTIME environm
 ```console
 MINERUNTIME="" ./minesector
 ```
-
-## Windows Build from Source Code
-It's 2023+. Install a modern operating system. You deserve it.
