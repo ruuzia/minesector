@@ -22,3 +22,7 @@ CPackSourceConfig.cmake
 minesector
 testminesector
 .cache/
+.ninja
+.ninja_deps
+build.ninja
+.ninja_log
