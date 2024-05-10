@@ -172,14 +172,27 @@ Tile::Tile(Texture *tex) : Button(tex) {
     isRed = false;
 }
 
-// WARNING: copy constructor and operator= don't actually copy fields rn
 Tile::Tile(Tile const & t)
-    : Tile()
+    : Button(t)
 {
-    (void)t;
+    setHidden(t.isHidden());
+    setFlagged(t.isFlagged());
+    setMine(t.isMine());
+    row = t.row;
+    col = t.col;
+    isRed = false;
+    game = t.game;
 }
-void Tile::operator=(Tile other) {
-    (void)other;
+
+Tile& Tile::operator=(Tile const& t) {
+    setHidden(t.isHidden());
+    setFlagged(t.isFlagged());
+    setMine(t.isMine());
+    row = t.row;
+    col = t.col;
+    isRed = false;
+    game = t.game;
+    return *this;
 }
 
 Uint8 Tile::save() {
@@ -299,22 +312,22 @@ void Tile::foreach_touching_tile(std::function<void(Tile&)> callback, bool diago
     const int above = row - 1;
 
     const bool spaceLeft = left >= 0;
-    const bool spaceRight = right < game->cols;
+    const bool spaceRight = right < game->board.cols();
     const bool spaceAbove = above >= 0;
-    const bool spaceBelow = below < game->rows;
+    const bool spaceBelow = below < game->board.rows();
 
     auto& board = game->board;
 
-    if (spaceLeft) callback(board[row][left]);
-    if (spaceRight) callback(board[row][right]);
-    if (spaceAbove) callback(board[above][col]);
-    if (spaceBelow) callback(board[below][col]);
+    if (spaceLeft) callback(board.get(row, left));
+    if (spaceRight) callback(board.get(row, right));
+    if (spaceAbove) callback(board.get(above, col));
+    if (spaceBelow) callback(board.get(below, col));
 
     if (diagonals) {
-        if (spaceLeft && spaceAbove) callback(board[above][left]);
-        if (spaceRight && spaceAbove) callback(board[above][right]);
-        if (spaceLeft && spaceBelow) callback(board[below][left]);
-        if (spaceRight && spaceBelow) callback(board[below][right]);
+        if (spaceLeft && spaceAbove) callback(board.get(above, left));
+        if (spaceRight && spaceAbove) callback(board.get(above, right));
+        if (spaceLeft && spaceBelow) callback(board.get(below, left));
+        if (spaceRight && spaceBelow) callback(board.get(below, right));
     }
 }
 

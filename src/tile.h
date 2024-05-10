@@ -54,7 +54,7 @@ public:
     Tile(Tile const& tile);
 
     ~Tile() = default;
-    void operator=(Tile other);
+    Tile& operator=(Tile const& t);
 
 
     [[nodiscard]] bool isMine() const { return mine; }

@@ -12,6 +12,16 @@ public:
     Button() {
         background = nullptr;
     }
+
+    Button(Button const& other) {
+        background = other.background;
+        onclick = other.onclick;
+    }
+    Button& operator=(Button const& other) {
+        background = other.background;
+        onclick = other.onclick;
+        return *this;
+    }
     virtual ~Button();
 
     const Texture* background;

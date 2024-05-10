@@ -39,8 +39,45 @@ namespace Icons {
     };
 }
 
+// Separate class for Field so we can change
+// implementation easily
+class Field {
+public:
+    Field(int num_rows, int num_cols, Game *game) : game(game) {
+        resize(num_rows, num_cols);
+    }
+    int rows() const {
+        return r;
+    }
+    int cols() const {
+        return c;
+    }
+    Tile& get(int row, int col) {
+        SDL_assert(row < rows() && col < cols());
+        return tiles[row * cols() + col];
+    }
+    void resize(int num_rows, int num_cols) {
+        r = num_rows;
+        c = num_cols;
+        tiles.resize(num_rows * num_cols);
+        for (int row = 0; row < rows(); ++row) {
+            for (int col = 0; col < cols(); ++col) {
+                Tile& tile = get(row, col);
+                tile.reset();
+                tile.row = row;
+                tile.col = col;
+                tile.setGame(game);
+            }
+        }
+    }
 
-#define MAX_FIELD_SIZE 50
+private:
+    int r;
+    int c;
+    std::vector<Tile> tiles;
+    Game *game;
+};
+
 
 class Game {
 public:
@@ -62,12 +99,10 @@ public:
 
     void onMouseMove(SDL_MouseMotionEvent const& e);
 
-    int rows, cols;
-
     int mouseX, mouseY;
 
     // std::array? why should I care?
-    Tile board[MAX_FIELD_SIZE][MAX_FIELD_SIZE];
+    Field board;
 
     uint32_t seed;
     std::mt19937 rng;
@@ -104,7 +139,6 @@ private:
     TextButton& activeRestartButton();
 
     void ready();
-    void resizeBoard();
     void restartGame();
     void onLost(Tile& mine);
     void onWon();

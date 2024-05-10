@@ -373,9 +373,9 @@ Mix_Chunk* Game::sounds[SoundEffects::COUNT];
 
 void Game::updateFlagCount() {
     int flagCount = 0;
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            flagCount += board[r][c].isFlagged();
+    for (int r = 0; r < board.rows(); r++) {
+        for (int c = 0; c < board.cols(); c++) {
+            flagCount += board.get(r, c).isFlagged();
         }
     }
 
@@ -390,9 +390,9 @@ void Game::OnUpdate(double dt) {
     int x = mouseX;
     int y = mouseY;
 
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            auto &tile = board[r][c];
+    for (int r = 0; r < board.rows(); r++) {
+        for (int c = 0; c < board.cols(); c++) {
+            auto &tile = board.get(r, c);
             tile.render(tile.isMouseOver(x, y));
             tile.animState.update(dt);
         }
@@ -417,8 +417,7 @@ Game::~Game() {
 }
 
 Game::Game(SDL_Window *window)
-    : rows(Difficulty::SIZES[1].rows)
-    , cols(Difficulty::SIZES[1].cols)
+    : board(Difficulty::SIZES[1].rows, Difficulty::SIZES[1].cols, this)
     , seed(time(0))
     , rng(seed)
     , mainFont("assets/fonts/Arbutus-Regular.ttf")
@@ -439,8 +438,10 @@ void Game::OnStart() {
     ready();
 
     if (!tileDatas.empty()) {
-        for (int r = 0; r < rows; ++r) for (int c = 0; c < cols; ++c) {
-            board[r][c].load(tileDatas[r*cols+c]);
+        for (int r = 0; r < board.rows(); ++r) {
+            for (int c = 0; c < board.cols(); ++c) {
+                board.get(r, c).load(tileDatas[r*board.cols()+c]);
+            }
         }
         updateFlagCount();
     }
@@ -451,16 +452,16 @@ void Game::OnStart() {
 
 // Called on both initial start and restart
 void Game::ready() {
-    mineCount = rows * cols * PERCENT_MINES;
+    mineCount = board.rows() * board.cols() * PERCENT_MINES;
     animState.kill();
 
     printf("Seed: %0u\n", seed);
 
-    resizeBoard();
+    //resizeBoard();
 
-    for (int row = 0; row < MAX_FIELD_SIZE; ++row) {
-        for (int col = 0; col < MAX_FIELD_SIZE; ++col) {
-            Tile &tile = board[row][col];
+    for (int row = 0; row < board.rows(); ++row) {
+        for (int col = 0; col < board.cols(); ++col) {
+            Tile& tile = board.get(row, col);
             tile.row = row;
             tile.col = col;
             tile.setGame(this);
@@ -486,17 +487,17 @@ void Game::save() {
     }
 
     writeByte('r');
-    writeByte((Uint8)rows);
+    writeByte((Uint8)board.rows());
     writeByte('c');
-    writeByte((Uint8)cols);
+    writeByte((Uint8)board.cols());
 
     writeByte('g');
     writeByte((Uint8)state);
 
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
+    for (int r = 0; r < board.rows(); r++) {
+        for (int c = 0; c < board.cols(); c++) {
             writeByte('t');
-            writeByte(board[r][c].save());
+            writeByte(board.get(r, c).save());
         }
     }
     writeByte('z');
@@ -524,14 +525,14 @@ void Game::load() {
         printf("Missing rows data :: expected r (%d) got (%d)\n", 'r', data);
         return;
     }
-    rows = readByte();
+    int rows = readByte();
 
     if (readByte() != 'c') {
         printf("Missing cols data\n");
         return;
     }
-    cols = readByte();
-    resizeBoard();
+    int cols = readByte();
+    board.resize(rows, cols);
 
     if (readByte() != 'g') {
         printf("Missing game state\n");
@@ -539,7 +540,7 @@ void Game::load() {
     }
     state = readByte();
 
-    tileDatas.resize(rows*cols, TileSaveData::DEFAULT);
+    tileDatas.resize(board.rows()*board.cols(), TileSaveData::DEFAULT);
     for (int i = 0; (data = readByte()) == 't'; i++) {
         tileDatas[i] = readByte();
     }
@@ -556,12 +557,6 @@ void Game::load() {
     closeSaveFile();
 }
 
-void Game::resizeBoard() {
-    // Resize 2d vector
-    assert(rows < MAX_FIELD_SIZE);
-    assert(cols < MAX_FIELD_SIZE);
-}
-
 void Game::restartGame() {
     playAgainBtn.hidden = true;
     restartBtn.hidden = false;
@@ -570,10 +565,10 @@ void Game::restartGame() {
 }
 
 static Tile* getTileUnderMouse(Game& self, int mouseX, int mouseY) {
-    for (int r = 0; r < self.rows; ++r) {
-        for (int c = 0; c < self.cols; ++c) {
-            if (self.board[r][c].isMouseOver(mouseX, mouseY)) {
-                return &self.board[r][c];
+    for (int r = 0; r < self.board.rows(); ++r) {
+        for (int c = 0; c < self.board.cols(); ++c) {
+            if (self.board.get(r, c).isMouseOver(mouseX, mouseY)) {
+                return &self.board.get(r, c);
             }
         }
     }
@@ -630,15 +625,15 @@ void Game::onLost(Tile& mine) {
     auto detonationAnim = new DetonationAnim {
         tileBackgrounds[TileBG::HIDDEN],
         rng, {mine.x, mine.y},
-        SDL_Rect{board[0][0].x, board[0][0].y, cols * Tile::SIZE, rows * Tile::SIZE },
+        SDL_Rect{board.get(0, 0).x, board.get(0, 0).y, board.cols() * Tile::SIZE, board.rows() * Tile::SIZE },
     };
     animState.play(GameAnims::EXPLODE, detonationAnim);
 
     std::vector<Tile *> mines;
     double delay = 0;
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            auto &tile = board[r][c];
+    for (int r = 0; r < board.rows(); r++) {
+        for (int c = 0; c < board.cols(); c++) {
+            auto &tile = board.get(r, c);
             if (tile.isMine() && tile.isUnflagged()) {
                 mines.push_back(&tile);
             }
@@ -665,9 +660,9 @@ void Game::onLost(Tile& mine) {
         delay += deltaDelay;
     }
 
-    for (int y = 0; y < MAX_FIELD_SIZE; y++) {
-        for (int x = 0; x < MAX_FIELD_SIZE; x++) {
-            auto &tile = board[y][x];
+    for (int y = 0; y < board.rows(); y++) {
+        for (int x = 0; x < board.cols(); x++) {
+            auto &tile = board.get(y, x);
             if (tile.isSafe() && tile.isFlagged()) {
                 // Incorrect flag
                 tile.red();
@@ -679,9 +674,9 @@ void Game::onLost(Tile& mine) {
 void Game::onWon() {
     state |= GameState::WON;
     
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            auto &tile = board[r][c];
+    for (int r = 0; r < board.rows(); r++) {
+        for (int c = 0; c < board.cols(); c++) {
+            auto &tile = board.get(r, c);
             if (tile.isMine()) {
                 tile.dissapear();
             }
@@ -780,23 +775,23 @@ void Game::generateStartingArea(Tile& root) {
 }
 
 void Game::generateMines() {
-    std::uniform_int_distribution<> randrow(0, rows);
-    std::uniform_int_distribution<> randcol(0, cols);
+    std::uniform_int_distribution<> randrow(0, board.rows());
+    std::uniform_int_distribution<> randcol(0, board.cols());
     for (int i = 0; i < mineCount; ++i) {
         int rowPicked = randrow(rng);
         int colPicked = randcol(rng);
 
         // Find first available tile
         Tile* tile = nullptr;
-        for (int _r = 0; _r < rows; ++_r)
-        for (int _c = 0; _c < cols; ++_c) {
+        for (int _r = 0; _r < board.rows(); ++_r)
+        for (int _c = 0; _c < board.cols(); ++_c) {
             // We want to start from the selected position and work our way around
             // as if it's a circular array
-            int r = (_r + rowPicked) % rows;
-            int c = (_c + colPicked) % cols;
+            int r = (_r + rowPicked) % board.rows();
+            int c = (_c + colPicked) % board.cols();
 
-            if (board[r][c].isHidden() && board[r][c].isSafe()) {
-                tile = &board[r][c];
+            if (board.get(r, c).isHidden() && board.get(r, c).isSafe()) {
+                tile = &board.get(r, c);
 
                 // Escape from nested loop
                 goto found;
@@ -904,9 +899,9 @@ void Game::loadMedia() {
 
     for (size_t i = 0; i < difficultyBtns.size(); ++i) {
         difficultyBtns[i].onclick = [this, i]() {
-            rows = Difficulty::SIZES[i].rows;
-            cols = Difficulty::SIZES[i].cols;
-            resizeBoard();
+            int rows = Difficulty::SIZES[i].rows;
+            int cols = Difficulty::SIZES[i].cols;
+            board.resize(rows, cols);
             restartGame();
         };
     }
@@ -941,8 +936,8 @@ void Game::positionItems() {
 
     // Tiles
     //int x = (SCREEN_WIDTH - cols*Tile::SIZE) / 2;
-    Tile::SIZE = std::min((SCREEN_WIDTH) / cols, (SCREEN_HEIGHT - y) / rows);
-    int x = (SCREEN_WIDTH - cols*Tile::SIZE) / 2;
+    Tile::SIZE = std::min((SCREEN_WIDTH) / board.cols(), (SCREEN_HEIGHT - y) / board.rows());
+    int x = (SCREEN_WIDTH - board.cols()*Tile::SIZE) / 2;
 
     for (int i = 0; i < TileOverlay::COUNT; ++i) {
         tileOverlays[i].setSize(Tile::SIZE, Tile::SIZE);
@@ -955,13 +950,13 @@ void Game::positionItems() {
         tileNumbers[i].setScale(NUMBER_SCALE * (Tile::SIZE / (double)TILE_BASE_SIZE));
     }
 
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
-            board[row][col].x = x + col * Tile::SIZE;
-            board[row][col].y = y + row * Tile::SIZE;
+    for (int row = 0; row < board.rows(); ++row) {
+        for (int col = 0; col < board.cols(); ++col) {
+            board.get(row, col).x = x + col * Tile::SIZE;
+            board.get(row, col).y = y + row * Tile::SIZE;
         }
     }
-    y += rows * 32;//Tile::SIZE;
+    y += board.rows() * 32;//Tile::SIZE;
 
 
     // Flag count text
@@ -972,7 +967,7 @@ void Game::positionItems() {
 
 
     // set x to right edge of board
-    x += cols * Tile::SIZE;
+    x += board.cols() * Tile::SIZE;
     y = 0;
     for (auto it = difficultyBtns.rbegin(); it != difficultyBtns.rend(); ++it) {
         it->setScale(0.3);
@@ -999,9 +994,9 @@ void Game::positionItems() {
 }
 
 bool Game::hasWon() {
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            if (board[r][c].isHidden() && board[r][c].isSafe()) {
+    for (int r = 0; r < board.rows(); r++) {
+        for (int c = 0; c < board.cols(); c++) {
+            if (board.get(r, c).isHidden() && board.get(r, c).isSafe()) {
                 return false;
             }
         }

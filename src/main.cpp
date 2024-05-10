@@ -157,10 +157,10 @@ extern "C" bool screenshot(void) {
     float scaleX, scaleY;
     SDL_RenderGetScale(renderer, &scaleX, &scaleY);
     SDL_Rect area;
-    area.x = scaleX * (viewport.x + game->board[0][0].x);
-    area.y = scaleX * (viewport.y + game->board[0][0].y);
-    area.w = scaleX * Tile::SIZE * game->cols;
-    area.h = scaleY * Tile::SIZE * game->rows;
+    area.x = scaleX * (viewport.x + game->board.get(0, 0).x);
+    area.y = scaleX * (viewport.y + game->board.get(0, 0).y);
+    area.w = scaleX * Tile::SIZE * game->board.cols();
+    area.h = scaleY * Tile::SIZE * game->board.rows();
 
     // Copy pixels to image
     SDL_Surface *surface = SDL_CreateRGBSurfaceWithFormat(0, area.w, area.h, 32, SDL_PIXELFORMAT_RGBA32);
