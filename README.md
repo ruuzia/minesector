@@ -1,6 +1,6 @@
 ## MineSector
 
-Pretty classic Minesweeper. Web Demo deployed [here](https://grassdne.github.io/minesector/)!
+Pretty classic Minesweeper. Web Demo deployed [here](https://ruuzia.github.io/minesector/)!
 
 ![game](example.png)
 
@@ -9,7 +9,7 @@ This uses only [SDL2](https://www.libsdl.org/) and extension libraries [SDL_imag
 Built with CMake (unfortunately).
 
 ## Quickstart
-Install the appropriate auto-built binary from [latest release](https://github.com/grassdne/minesector/releases/latest).
+Install the appropriate auto-built binary from [latest release](https://github.com/ruuzia/minesector/releases/latest).
 
 For Windows: Run the .msi installer. You may need to get past Windows Defender. \
 For MacOS: Use the .dmg package and do that weird Drag and Drop into Applications thing you do. The first time you go to open it right click -> Open -> Open. \
@@ -34,7 +34,7 @@ Other Unix: Build from source. See below.
   
 2. Build source code
 ```console
-git clone https://github.com/grassdne/minesector.git
+git clone https://github.com/ruuzia/minesector.git
 cd minesector
 ./configure
 make -j
