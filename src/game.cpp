@@ -1,6 +1,7 @@
 #include "game.h"
 #include <SDL_mixer.h>
 #include <SDL_mouse.h>
+#include <cstdio>
 #include <string>
 #include <algorithm>
 #include "app.h"
@@ -914,7 +915,8 @@ void Game::loadMedia() {
     for (int i = 0; i < SoundEffects::COUNT; ++i) {
         sounds[i] = Mix_LoadWAV((Sim.runtimeBasePath + SOUND_FILES[i]).c_str());
         if (sounds[i] == nullptr) {
-            throw std::runtime_error("Failed to load sound:" + std::string(Mix_GetError()));
+            fprintf(stderr, "Failed to load sound: %s\n", Mix_GetError());
+            exit(1);
         }
     }
 

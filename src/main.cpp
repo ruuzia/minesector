@@ -57,30 +57,40 @@ void App::init() {
     printf("Runtime path: %s\n", runtimeBasePath.c_str()); fflush(stdout);
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
-        throw std::runtime_error("SDL could not initialize! SDL Error: " + std::string(SDL_GetError()));
+        fprintf(stderr, "SDL could not initialize! SDL Error: %s\n", SDL_GetError());
+        exit(1);
     }
 
     window = SDL_CreateWindow("MineSector", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if (window == nullptr) throw std::runtime_error("Unable to create window. SDL Error: " + std::string(SDL_GetError()));
+    if (window == nullptr) {
+        fprintf(stderr, "Unable to create window. SDL Error: %s\n", SDL_GetError());
+        exit(1);
+    }
 
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == nullptr)
-        throw std::runtime_error("Unable to create accelerated renderer. SDL Error: " + std::string(SDL_GetError()));
+    if (renderer == nullptr) {
+        fprintf(stderr, "Unable to create accelerated renderer. SDL Error: %s\n", SDL_GetError());
+        exit(1);
+    }
 
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
 
 
     int imgFlags = IMG_INIT_PNG;
-    if (!(IMG_Init(imgFlags) & imgFlags))
-        throw std::runtime_error("SDL_image could not initialize: " + std::string(IMG_GetError()));
+    if (!(IMG_Init(imgFlags) & imgFlags)) {
+        fprintf(stderr, "SDL_image could not initialize: %s\n", IMG_GetError());
+        exit(1);
+    }
 
     if (TTF_Init() == -1) {
-        throw std::runtime_error("SDL_ttf could not initialize: " + std::string(TTF_GetError()));
+        fprintf(stderr, "SDL_ttf could not initialize: %s\n", TTF_GetError());
+        exit(1);
     }
 
     if (Mix_OpenAudio(/* Frequency */ 44100, MIX_DEFAULT_FORMAT, /* Channels */ 2, /* Chunksize */ 2048) < 0) {
-        throw std::runtime_error("SDL_mixer count not initialize: " + std::string(Mix_GetError()));
+        fprintf(stderr, "SDL_mixer count not initialize: %s", Mix_GetError());
+        exit(1);
     }
 
     SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -280,45 +290,31 @@ App Sim;
 
 int main(int argc, char **argv) {
     (void)argc;
-    try {
-        Sim.init();
-    }
-    catch (const std::runtime_error& ex) {
-        printf("Failed to initialize SDL.\n%s\n", ex.what());
-        return 1;
-    }
+    Sim.init();
 
-    try {
-        frontend_init(&argv[1]);
-        Game _game(Sim.window);
-        game = &_game;
-        lastFrame = SDL_GetTicks();
-        _game.OnStart();
+    frontend_init(&argv[1]);
+    Game _game(Sim.window);
+    game = &_game;
+    lastFrame = SDL_GetTicks();
+    _game.OnStart();
 
-        SDL_SetEventFilter(event_filter, &_game);
-        SDL_EventState(SDL_MOUSEWHEEL, SDL_IGNORE);
+    SDL_SetEventFilter(event_filter, &_game);
+    SDL_EventState(SDL_MOUSEWHEEL, SDL_IGNORE);
 
 #ifdef __EMSCRIPTEN__
-        emscripten_set_main_loop(mainloop, 0, 1);
-        //emscripten_set_main_loop_arg(mainloop, &game, 0, 1);
+    emscripten_set_main_loop(mainloop, 0, 1);
+    //emscripten_set_main_loop_arg(mainloop, &game, 0, 1);
 #else
-        while (running) {
-            mainloop();
+    while (running) {
+        mainloop();
 
-            const int updateTime = SDL_GetTicks() - lastFrame;
-            if (updateTime < TICKS_PER_FRAME) {
-                SDL_Delay(TICKS_PER_FRAME - updateTime);
-            }
+        const int updateTime = SDL_GetTicks() - lastFrame;
+        if (updateTime < TICKS_PER_FRAME) {
+            SDL_Delay(TICKS_PER_FRAME - updateTime);
         }
-        game->save();
+    }
+    game->save();
 #endif
-
-    }
-
-    catch (const std::runtime_error& ex) {
-        printf("%s\n", ex.what());
-        return 1;
-    }
 
 
     return 0;

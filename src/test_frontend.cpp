@@ -4,9 +4,6 @@
 #include <cassert>
 #include <cstdbool>
 #include <fstream>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
 #include "backend.h"
 #include "frontend.h"
 

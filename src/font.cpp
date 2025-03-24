@@ -1,5 +1,4 @@
 #include "font.h"
-#include <stdexcept>
 #include "app.h"
 
 Font::Font() {
@@ -9,7 +8,8 @@ Font::Font() {
 void Font::load(std::string path, int size) {
     font = TTF_OpenFont((Sim.runtimeBasePath + path).c_str(), size);
     if (font == nullptr) {
-        throw std::runtime_error("Failed to load font! SDL_ttf error: " + std::string(TTF_GetError()));
+        fprintf(stderr, "Failed to load font! SDL_ttf error: %s\n", TTF_GetError());
+        exit(1);
     }
 }
 Font::~Font() {

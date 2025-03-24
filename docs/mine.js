@@ -1,5 +1,10 @@
 mergeInto(LibraryManager.library, {
+    /**
+     * @param {string} _path
+     * @return {boolean}
+     */
     openSaveReader: function(_path) {
+        /** @type {string} **/
         let contents = localStorage.getItem("save");
         if (contents) {
             _reader = {index: 0, str: contents};
@@ -7,6 +12,9 @@ mergeInto(LibraryManager.library, {
         }
         return false
     },
+    /**
+     * @return {number}
+     */
     readByte: function() {
         if (typeof _reader != "undefined") {
             return _reader.str.charCodeAt(_reader.index++);

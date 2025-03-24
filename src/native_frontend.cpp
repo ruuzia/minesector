@@ -40,13 +40,15 @@ void closeSaveFile(void) {
 void frontend_init(char **arg) {
     if (arg[0] && strcmp(arg[0], "--save") == 0) {
         if (arg[1] == NULL) {
-            throw std::runtime_error("--save requires additional argument");
+            fprintf(stderr, "--save requires additional argument\n");
+            exit(1);
         }
         save_file_path = arg[1];
     } else {
         char* dir = SDL_GetPrefPath("rzia.dev", "minesector");
         if (dir == NULL) {
-            throw std::runtime_error("Error getting the pref dir");
+            fprintf(stderr, "Error getting the pref dir\n");
+            exit(1);
         }
         save_file_path = std::string(std::string(dir)+Save::FILE);
         SDL_free(dir);

@@ -71,12 +71,14 @@ void Texture::loadFile(std::string& path) {
     // Directly load image to texture
     texture = IMG_LoadTexture(renderer, (Sim.runtimeBasePath + path).c_str());
     if (texture == nullptr) {
-        throw std::runtime_error("Unable to create texture from image " + path + ". SDL_image error: " + std::string(IMG_GetError()));
+        fprintf(stderr, "Unable to create texture from image %s. SDL_image error: %s\n", path.c_str(), IMG_GetError());
+        exit(1);
     }
 
     // Get width and height of texture
     if (SDL_QueryTexture(texture, nullptr, nullptr, &width, &height) < 0) {
-        throw std::runtime_error("Unable to query texture. SDL error: " + std::string(SDL_GetError()));
+        fprintf(stderr, "Unable to query texture. SDL error: %s\n", SDL_GetError());
+        exit(1);
     }
 
     imgWidth = width;
@@ -90,12 +92,14 @@ void Texture::loadText(TTF_Font *font, const char *text, SDL_Color color) {
     // Need to create temp surface and convert to texture
     SDL_Surface *tmpSurface = TTF_RenderText_Solid(font, text, color);
     if (tmpSurface == nullptr) {
-        throw std::runtime_error("Unable to load text. SDL_ttf error: " + std::string(TTF_GetError()));
+        fprintf(stderr, "Unable to load text. SDL_ttf error: %s\n", TTF_GetError());
+        exit(1);
     }
 
     texture = SDL_CreateTextureFromSurface(renderer, tmpSurface);
     if (texture == nullptr) {
-        throw std::runtime_error("Unable to create texture from text. SDL error: " + std::string(SDL_GetError()));
+        fprintf(stderr, "Unable to create texture from text. SDL error: %s\n", SDL_GetError());
+        exit(1);
     }
     width = tmpSurface->w;
     height = tmpSurface->h;
